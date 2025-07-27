@@ -1,0 +1,13 @@
+migrations/
+__pycache__/
+.idea/
+env
+*.patch
+.vscode
+*.pyc
+build
+dist
+*.log
+logs
+.conda
+参考
