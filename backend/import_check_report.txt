@@ -1,0 +1,37 @@
+================================================================================
+导入检查报告
+================================================================================
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\family\apps.py
+   未使用的导入 (2个):
+     - from  import signals
+     - from  import tasks
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\media\models.py
+   未使用的导入 (1个):
+     - from django.core.validators import FileExtensionValidator
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\members\schemas.py
+   未使用的导入 (2个):
+     - from pydantic import field_validator
+     - from pydantic import ValidationInfo
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\users\apps.py
+   未使用的导入 (2个):
+     - from models import UserProfile
+     - from  import signals
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\users\models.py
+   未使用的导入 (1个):
+     - from django.utils.translation import gettext_lazy as _
+
+⚠️  d:\Project\Github\FamilyTree\backend\apps\users\schemas.py
+   未使用的导入 (1个):
+     - from typing import List
+
+================================================================================
+统计信息
+================================================================================
+总文件数: 90
+有问题的文件数: 6
+未使用导入总数: 9
