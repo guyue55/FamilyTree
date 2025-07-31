@@ -7,7 +7,57 @@
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils.translation import gettext_lazy as _
+
 from apps.common.models import BaseModel, SoftDeleteModel, VisibilityChoices
+
+
+# 关系类型枚举
+class RelationshipTypeChoices(models.TextChoices):
+    """关系类型选择枚举"""
+    # 血缘关系
+    PARENT = 'parent', _('父母')
+    CHILD = 'child', _('子女')
+    SIBLING = 'sibling', _('兄弟姐妹')
+    GRANDPARENT = 'grandparent', _('祖父母/外祖父母')
+    GRANDCHILD = 'grandchild', _('孙子女/外孙子女')
+    UNCLE_AUNT = 'uncle_aunt', _('叔伯/姑姨')
+    NEPHEW_NIECE = 'nephew_niece', _('侄子女/外甥女')
+    COUSIN = 'cousin', _('堂兄弟姐妹/表兄弟姐妹')
+    
+    # 婚姻关系
+    SPOUSE = 'spouse', _('配偶')
+    EX_SPOUSE = 'ex_spouse', _('前配偶')
+    
+    # 姻亲关系
+    PARENT_IN_LAW = 'parent_in_law', _('岳父母/公婆')
+    CHILD_IN_LAW = 'child_in_law', _('女婿/儿媳')
+    SIBLING_IN_LAW = 'sibling_in_law', _('姐夫/妹夫/嫂子/弟媳')
+    
+    # 其他关系
+    ADOPTIVE_PARENT = 'adoptive_parent', _('养父母')
+    ADOPTIVE_CHILD = 'adoptive_child', _('养子女')
+    STEPPARENT = 'stepparent', _('继父母')
+    STEPCHILD = 'stepchild', _('继子女')
+    GODPARENT = 'godparent', _('干父母')
+    GODCHILD = 'godchild', _('干子女')
+
+
+class ConfidenceLevelChoices(models.TextChoices):
+    """可信度选择枚举"""
+    HIGH = 'high', _('高')
+    MEDIUM = 'medium', _('中')
+    LOW = 'low', _('低')
+    UNKNOWN = 'unknown', _('未知')
+
+
+class MarriageStatusChoices(models.TextChoices):
+    """婚姻状态选择枚举"""
+    MARRIED = 'married', _('已婚')
+    DIVORCED = 'divorced', _('已离婚')
+    SEPARATED = 'separated', _('分居')
+    WIDOWED = 'widowed', _('丧偶')
+    ANNULLED = 'annulled', _('婚姻无效')
 
 
 class Relationship(SoftDeleteModel):
@@ -40,34 +90,7 @@ class Relationship(SoftDeleteModel):
     # 关系类型
     relationship_type = models.CharField(
         max_length=20,
-        choices=[
-            # 血缘关系
-            ('parent', '父母'),
-            ('child', '子女'),
-            ('sibling', '兄弟姐妹'),
-            ('grandparent', '祖父母/外祖父母'),
-            ('grandchild', '孙子女/外孙子女'),
-            ('uncle_aunt', '叔伯/姑姨'),
-            ('nephew_niece', '侄子女/外甥女'),
-            ('cousin', '堂兄弟姐妹/表兄弟姐妹'),
-            
-            # 婚姻关系
-            ('spouse', '配偶'),
-            ('ex_spouse', '前配偶'),
-            
-            # 姻亲关系
-            ('parent_in_law', '岳父母/公婆'),
-            ('child_in_law', '女婿/儿媳'),
-            ('sibling_in_law', '姐夫/妹夫/嫂子/弟媳'),
-            
-            # 其他关系
-            ('adoptive_parent', '养父母'),
-            ('adoptive_child', '养子女'),
-            ('stepparent', '继父母'),
-            ('stepchild', '继子女'),
-            ('godparent', '干父母'),
-            ('godchild', '干子女'),
-        ],
+        choices=RelationshipTypeChoices.choices,
         verbose_name='关系类型',
         help_text='成员之间的关系类型',
         db_comment='关系类型：parent-父母，child-子女，spouse-配偶等'
@@ -93,13 +116,8 @@ class Relationship(SoftDeleteModel):
     # 关系的可信度
     confidence_level = models.CharField(
         max_length=10,
-        choices=[
-            ('high', '高'),
-            ('medium', '中'),
-            ('low', '低'),
-            ('unknown', '未知'),
-        ],
-        default='medium',
+        choices=ConfidenceLevelChoices.choices,
+        default=ConfidenceLevelChoices.MEDIUM,
         verbose_name='可信度',
         help_text='关系信息的可信度',
         db_comment='可信度：high-高，medium-中，low-低，unknown-未知'
@@ -186,7 +204,6 @@ class Relationship(SoftDeleteModel):
             models.Index(fields=['relationship_type']),
             models.Index(fields=['is_confirmed']),
             models.Index(fields=['is_active']),
-            models.Index(fields=['created_at']),
         ]
         unique_together = [
             ('from_member_id', 'to_member_id', 'relationship_type'),  # 防止重复关系
@@ -278,14 +295,8 @@ class Marriage(BaseModel):
     # 婚姻状态
     status = models.CharField(
         max_length=20,
-        choices=[
-            ('married', '已婚'),
-            ('divorced', '已离婚'),
-            ('separated', '分居'),
-            ('widowed', '丧偶'),
-            ('annulled', '婚姻无效'),
-        ],
-        default='married',
+        choices=MarriageStatusChoices.choices,
+        default=MarriageStatusChoices.MARRIED,
         verbose_name='婚姻状态',
         db_comment='婚姻状态：married-已婚，divorced-已离婚，separated-分居，widowed-丧偶，annulled-婚姻无效'
     )
@@ -372,7 +383,6 @@ class Marriage(BaseModel):
             models.Index(fields=['wife_id']),
             models.Index(fields=['status']),
             models.Index(fields=['marriage_date']),
-            models.Index(fields=['created_at']),
         ]
         unique_together = [
             ('husband_id', 'wife_id', 'marriage_order'),  # 防止重复的婚姻记录

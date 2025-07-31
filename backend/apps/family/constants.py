@@ -1,3 +1,4 @@
+from typing import List, Tuple
 """
 Family应用常量定义
 
@@ -5,12 +6,6 @@ Family应用常量定义
 遵循Django最佳实践和Google Python Style Guide。
 """
 
-from typing import List, Tuple
-
-
-# ==================== 家族相关常量 ====================
-
-# 家族可见性选择
 FAMILY_VISIBILITY_CHOICES = [
     ('public', '公开'),
     ('protected', '受保护'),
@@ -37,7 +32,6 @@ DEFAULT_MEMBER_COUNT = 1
 # 家族世代数量限制
 MAX_GENERATIONS = 20
 DEFAULT_GENERATIONS = 5
-
 
 # ==================== 家族设置相关常量 ====================
 
@@ -115,7 +109,6 @@ DEFAULT_FAMILY_SETTINGS = {
     'notify_tree_update': True,
 }
 
-
 # ==================== 邀请相关常量 ====================
 
 # 邀请状态选择
@@ -142,7 +135,6 @@ MAX_PENDING_INVITATIONS_PER_FAMILY = 50
 
 # 每个用户每天可发送的邀请数量限制
 MAX_INVITATIONS_PER_USER_PER_DAY = 10
-
 
 # ==================== 权限相关常量 ====================
 
@@ -185,7 +177,6 @@ DEFAULT_ROLE_PERMISSIONS = {
     ]
 }
 
-
 # ==================== 缓存相关常量 ====================
 
 # 缓存键前缀
@@ -215,7 +206,7 @@ CACHE_KEYS = {
 # 详细缓存键配置（从config.py合并）
 class CacheKeys:
     """缓存键常量类"""
-    
+
     # 家族相关缓存键
     FAMILY_DETAIL = 'family:detail:{}'
     FAMILY_LIST = 'family:list:{}'
@@ -224,30 +215,29 @@ class CacheKeys:
     FAMILY_SETTINGS = 'family:settings:{}'
     FAMILY_STATISTICS = 'family:stats:{}'
     FAMILY_PERMISSIONS = 'family:permissions:{}:{}'
-    
+
     # 用户相关缓存键
     USER_FAMILIES = 'user:families:{}'
     USER_FAMILY_ROLES = 'user:family_roles:{}'
     USER_FAMILY_PERMISSIONS = 'user:family_permissions:{}:{}'
-    
+
     # 搜索相关缓存键
     FAMILY_SEARCH = 'family:search:{}'
     POPULAR_FAMILIES = 'families:popular'
     RECENT_FAMILIES = 'families:recent'
     FAMILY_TAGS = 'families:tags'
-    
+
     # 统计相关缓存键
     FAMILY_COUNT = 'families:count'
     MEMBER_COUNT = 'families:member_count'
     INVITATION_COUNT = 'families:invitation_count'
-
 
 # ==================== 队列相关常量 ====================
 
 # 队列名称
 class QueueNames:
     """队列名称常量"""
-    
+
     # 家族相关队列
     FAMILY_OPERATIONS = 'family_operations'
     FAMILY_NOTIFICATIONS = 'family_notifications'
@@ -256,28 +246,27 @@ class QueueNames:
     FAMILY_BACKUP = 'family_backup'
     FAMILY_EXPORT = 'family_export'
     FAMILY_IMPORT = 'family_import'
-    
+
     # 邮件队列
     EMAIL_INVITATIONS = 'email_invitations'
     EMAIL_NOTIFICATIONS = 'email_notifications'
-    
+
     # 文件处理队列
     FILE_PROCESSING = 'file_processing'
     IMAGE_PROCESSING = 'image_processing'
-
 
 # ==================== 错误代码常量 ====================
 
 class ErrorCodes:
     """错误代码常量"""
-    
+
     # 通用错误 (1000-1099)
     INVALID_REQUEST = 'FAMILY_1001'
     PERMISSION_DENIED = 'FAMILY_1002'
     NOT_FOUND = 'FAMILY_1003'
     VALIDATION_ERROR = 'FAMILY_1004'
     RATE_LIMIT_EXCEEDED = 'FAMILY_1005'
-    
+
     # 家族错误 (1100-1199)
     FAMILY_NOT_FOUND = 'FAMILY_1101'
     FAMILY_ACCESS_DENIED = 'FAMILY_1102'
@@ -285,7 +274,7 @@ class ErrorCodes:
     FAMILY_LIMIT_EXCEEDED = 'FAMILY_1104'
     FAMILY_NAME_TAKEN = 'FAMILY_1105'
     FAMILY_SLUG_TAKEN = 'FAMILY_1106'
-    
+
     # 成员错误 (1200-1299)
     MEMBER_NOT_FOUND = 'FAMILY_1201'
     MEMBER_ALREADY_EXISTS = 'FAMILY_1202'
@@ -293,7 +282,7 @@ class ErrorCodes:
     INSUFFICIENT_ROLE = 'FAMILY_1204'
     CANNOT_REMOVE_OWNER = 'FAMILY_1205'
     CANNOT_CHANGE_OWNER_ROLE = 'FAMILY_1206'
-    
+
     # 邀请错误 (1300-1399)
     INVITATION_NOT_FOUND = 'FAMILY_1301'
     INVITATION_EXPIRED = 'FAMILY_1302'
@@ -301,20 +290,19 @@ class ErrorCodes:
     INVITATION_LIMIT_EXCEEDED = 'FAMILY_1304'
     INVITATION_ALREADY_ACCEPTED = 'FAMILY_1305'
     INVITATION_ALREADY_REJECTED = 'FAMILY_1306'
-    
+
     # 文件错误 (1400-1499)
     FILE_TOO_LARGE = 'FAMILY_1401'
     INVALID_FILE_FORMAT = 'FAMILY_1402'
     UPLOAD_FAILED = 'FAMILY_1403'
     FILE_NOT_FOUND = 'FAMILY_1404'
-    
+
     # 系统错误 (1500-1599)
     DATABASE_ERROR = 'FAMILY_1501'
     CACHE_ERROR = 'FAMILY_1502'
     QUEUE_ERROR = 'FAMILY_1503'
     EMAIL_ERROR = 'FAMILY_1504'
     EXTERNAL_SERVICE_ERROR = 'FAMILY_1505'
-
 
 # ==================== 文件上传相关常量 ====================
 
@@ -335,7 +323,6 @@ UPLOAD_PATHS = {
     'family_cover': 'families/{family_id}/cover/',
     'family_media': 'families/{family_id}/media/{year}/{month}/',
 }
-
 
 # ==================== 通知相关常量 ====================
 
@@ -369,7 +356,6 @@ DEFAULT_NOTIFICATION_SETTINGS = {
     'notify_settings_change': False,
 }
 
-
 # ==================== API相关常量 ====================
 
 # 注意：分页相关常量已移至 apps.common.constants.PaginationDefaults
@@ -399,7 +385,6 @@ FILTER_OPTIONS = {
     'theme': THEME_CHOICES,
 }
 
-
 # ==================== 错误消息常量 ====================
 
 ERROR_MESSAGES = {
@@ -418,7 +403,6 @@ ERROR_MESSAGES = {
     'file_too_large': '文件大小超出限制',
 }
 
-
 # ==================== 成功消息常量 ====================
 
 SUCCESS_MESSAGES = {
@@ -434,17 +418,16 @@ SUCCESS_MESSAGES = {
     'file_uploaded': '文件上传成功',
 }
 
-
 # ==================== 辅助函数 ====================
 
 def get_choice_display(choices: List[Tuple[str, str]], value: str) -> str:
     """
     获取选择项的显示文本
-    
+
     Args:
         choices: 选择项列表
         value: 选择值
-        
+
     Returns:
         str: 显示文本
     """
@@ -453,29 +436,27 @@ def get_choice_display(choices: List[Tuple[str, str]], value: str) -> str:
             return choice_display
     return value
 
-
 def validate_choice(choices: List[Tuple[str, str]], value: str) -> bool:
     """
     验证选择项是否有效
-    
+
     Args:
         choices: 选择项列表
         value: 选择值
-        
+
     Returns:
         bool: 是否有效
     """
     return value in [choice[0] for choice in choices]
 
-
 def get_cache_key(template: str, **kwargs) -> str:
     """
     生成缓存键
-    
+
     Args:
         template: 缓存键模板
         **kwargs: 模板参数
-        
+
     Returns:
         str: 缓存键
     """

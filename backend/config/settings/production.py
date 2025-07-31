@@ -7,6 +7,7 @@ Django生产环境配置文件
 
 from .base import *
 
+
 # 生产环境标识
 DEBUG = False
 

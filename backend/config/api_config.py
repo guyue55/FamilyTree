@@ -1,3 +1,5 @@
+from typing import Dict, List, Any
+from django.conf import settings
 """
 API配置模块
 
@@ -5,45 +7,41 @@ API配置模块
 遵循API设计文档规范。
 """
 
-from typing import Dict, List, Any
-from django.conf import settings
-
-
 class APIConfig:
     """API配置类"""
-    
+
     # API版本配置
-    VERSION = "1.0.0"
+    VERSION = getattr(settings, 'API_VERSION', "1.0.0")
     TITLE = "Family Tree API"
     DESCRIPTION = "家族树管理系统API接口"
-    
+
     # 认证配置
     JWT_SECRET_KEY = getattr(settings, 'SECRET_KEY', '')
     JWT_ALGORITHM = 'HS256'
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS = 7
-    
+
     # 分页配置
     DEFAULT_PAGE_SIZE = 20
     MAX_PAGE_SIZE = 100
-    
+
     # 文件上传配置
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
     ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'text/plain', 'application/msword']
-    
+
     # 限流配置
     RATE_LIMIT_ENABLED = True
     RATE_LIMIT_REQUESTS = 100
     RATE_LIMIT_WINDOW = 3600  # 1小时
-    
+
     # CORS配置
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://familytree.example.com"
     ]
-    
+
     # API响应配置
     RESPONSE_FORMATS = {
         'success': {
@@ -70,7 +68,7 @@ class APIConfig:
             'request_id': None
         }
     }
-    
+
     # 错误码映射
     ERROR_CODE_MAPPING = {
         # 通用错误码
@@ -82,7 +80,7 @@ class APIConfig:
         'VALIDATION_ERROR': 422,
         'RATE_LIMIT_EXCEEDED': 429,
         'INTERNAL_SERVER_ERROR': 500,
-        
+
         # 业务错误码
         'USER_NOT_FOUND': 40001,
         'USER_ALREADY_EXISTS': 40002,
@@ -96,7 +94,7 @@ class APIConfig:
         'FILE_TOO_LARGE': 40401,
         'INVALID_FILE_TYPE': 40402,
     }
-    
+
     # HTTP状态码映射
     HTTP_STATUS_MAPPING = {
         200: 'OK',
@@ -111,7 +109,7 @@ class APIConfig:
         429: 'Too Many Requests',
         500: 'Internal Server Error',
     }
-    
+
     @classmethod
     def get_jwt_config(cls) -> Dict[str, Any]:
         """获取JWT配置"""
@@ -121,7 +119,7 @@ class APIConfig:
             'access_token_expire_minutes': cls.JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
             'refresh_token_expire_days': cls.JWT_REFRESH_TOKEN_EXPIRE_DAYS,
         }
-    
+
     @classmethod
     def get_pagination_config(cls) -> Dict[str, int]:
         """获取分页配置"""
@@ -129,7 +127,7 @@ class APIConfig:
             'default_page_size': cls.DEFAULT_PAGE_SIZE,
             'max_page_size': cls.MAX_PAGE_SIZE,
         }
-    
+
     @classmethod
     def get_file_upload_config(cls) -> Dict[str, Any]:
         """获取文件上传配置"""
@@ -138,7 +136,7 @@ class APIConfig:
             'allowed_image_types': cls.ALLOWED_IMAGE_TYPES,
             'allowed_document_types': cls.ALLOWED_DOCUMENT_TYPES,
         }
-    
+
     @classmethod
     def get_rate_limit_config(cls) -> Dict[str, Any]:
         """获取限流配置"""
@@ -147,24 +145,23 @@ class APIConfig:
             'requests': cls.RATE_LIMIT_REQUESTS,
             'window': cls.RATE_LIMIT_WINDOW,
         }
-    
+
     @classmethod
     def get_cors_config(cls) -> Dict[str, List[str]]:
         """获取CORS配置"""
         return {
             'allowed_origins': cls.CORS_ALLOWED_ORIGINS,
         }
-    
+
     @classmethod
     def get_error_code(cls, error_type: str) -> int:
         """获取错误码"""
         return cls.ERROR_CODE_MAPPING.get(error_type, 500)
-    
+
     @classmethod
     def get_http_status_text(cls, status_code: int) -> str:
         """获取HTTP状态码文本"""
         return cls.HTTP_STATUS_MAPPING.get(status_code, 'Unknown')
-
 
 # 导出配置实例
 api_config = APIConfig()

@@ -5,7 +5,10 @@ Django测试环境配置文件
 继承自base.py的基础配置。
 """
 
+import sys
+
 from .base import *
+
 
 # 测试环境标识
 DEBUG = False
@@ -86,29 +89,31 @@ CORS_ALLOW_ALL_ORIGINS = True
 API_DEBUG = True
 
 # 测试环境性能优化
-MIGRATION_MODULES = {
-    'users': None,
-    'family': None,
-    'members': None,
-    'relationships': None,
-    'media': None,
-    'common': None,
-}
+# 注释掉迁移禁用，确保测试时能创建必要的表
+# MIGRATION_MODULES = {
+#     'users': None,
+#     'family': None,
+#     'members': None,
+#     'relationships': None,
+#     'media': None,
+#     'common': None,
+# }
 
 # 禁用迁移以加速测试
-class DisableMigrations:
-    def __contains__(self, item):
-        return True
-    
-    def __getitem__(self, item):
-        return None
+# class DisableMigrations:
+#     def __contains__(self, item):
+#         return True
+
+#     def __getitem__(self, item):
+#         return None
 
 # 在测试时禁用迁移
-import sys
-if 'test' in sys.argv:
-    MIGRATION_MODULES = DisableMigrations()
+# import sys
+# if 'test' in sys.argv:
+#     MIGRATION_MODULES = DisableMigrations()
 
 # 测试数据库配置优化
+
 if 'test' in sys.argv:
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',

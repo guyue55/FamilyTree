@@ -7,7 +7,43 @@
 
 from django.db import models
 from django.core.validators import MinLengthValidator, MaxValueValidator, MinValueValidator
+from django.utils.translation import gettext_lazy as _
 from apps.common.models import BaseModel, SoftDeleteModel, GenderChoices, VisibilityChoices
+
+
+# 家族成员角色枚举
+class FamilyRoleChoices(models.TextChoices):
+    """家族角色选择枚举"""
+    OWNER = 'owner', _('家族创建者')
+    ADMIN = 'admin', _('管理员')
+    EDITOR = 'editor', _('编辑者')
+    MEMBER = 'member', _('普通成员')
+    VIEWER = 'viewer', _('访客')
+
+
+class MembershipStatusChoices(models.TextChoices):
+    """成员关系状态选择枚举"""
+    ACTIVE = 'active', _('活跃')
+    INACTIVE = 'inactive', _('非活跃')
+    SUSPENDED = 'suspended', _('暂停')
+    PENDING = 'pending', _('待审核')
+
+
+class JoinMethodChoices(models.TextChoices):
+    """加入方式选择枚举"""
+    CREATED = 'created', _('创建家族')
+    INVITED = 'invited', _('受邀加入')
+    APPLIED = 'applied', _('申请加入')
+    IMPORTED = 'imported', _('导入添加')
+
+
+class NoteTypeChoices(models.TextChoices):
+    """备注类型选择枚举"""
+    GENERAL = 'general', _('一般备注')
+    IMPORTANT = 'important', _('重要信息')
+    MEDICAL = 'medical', _('医疗信息')
+    ACHIEVEMENT = 'achievement', _('成就记录')
+    STORY = 'story', _('故事传说')
 
 
 class Member(SoftDeleteModel):
@@ -293,14 +329,8 @@ class FamilyMembership(BaseModel):
     # 角色
     role = models.CharField(
         max_length=20,
-        choices=[
-            ('owner', '家族创建者'),
-            ('admin', '管理员'),
-            ('editor', '编辑者'),
-            ('member', '普通成员'),
-            ('viewer', '访客'),
-        ],
-        default='member',
+        choices=FamilyRoleChoices.choices,
+        default=FamilyRoleChoices.MEMBER,
         verbose_name='角色',
         help_text='用户在家族中的角色',
         db_comment='用户在家族中的角色'
@@ -352,13 +382,8 @@ class FamilyMembership(BaseModel):
     # 状态
     status = models.CharField(
         max_length=20,
-        choices=[
-            ('active', '活跃'),
-            ('inactive', '非活跃'),
-            ('suspended', '暂停'),
-            ('pending', '待审核'),
-        ],
-        default='active',
+        choices=MembershipStatusChoices.choices,
+        default=MembershipStatusChoices.ACTIVE,
         verbose_name='状态',
         db_comment='成员关系状态'
     )
@@ -366,13 +391,8 @@ class FamilyMembership(BaseModel):
     # 加入方式
     join_method = models.CharField(
         max_length=20,
-        choices=[
-            ('created', '创建家族'),
-            ('invited', '受邀加入'),
-            ('applied', '申请加入'),
-            ('imported', '导入添加'),
-        ],
-        default='invited',
+        choices=JoinMethodChoices.choices,
+        default=JoinMethodChoices.INVITED,
         verbose_name='加入方式',
         db_comment='成员加入家族的方式'
     )
@@ -462,14 +482,8 @@ class MemberNote(BaseModel):
     # 备注类型
     note_type = models.CharField(
         max_length=20,
-        choices=[
-            ('general', '一般备注'),
-            ('important', '重要信息'),
-            ('medical', '医疗信息'),
-            ('achievement', '成就记录'),
-            ('story', '故事传说'),
-        ],
-        default='general',
+        choices=NoteTypeChoices.choices,
+        default=NoteTypeChoices.GENERAL,
         verbose_name='备注类型',
         db_comment='备注的类型分类'
     )
@@ -500,7 +514,6 @@ class MemberNote(BaseModel):
             models.Index(fields=['creator_id']),
             models.Index(fields=['note_type']),
             models.Index(fields=['is_private']),
-            models.Index(fields=['created_at']),
         ]
         ordering = ['-created_at']
     

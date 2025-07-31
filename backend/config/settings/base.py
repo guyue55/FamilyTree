@@ -5,12 +5,10 @@ Django基础配置文件
 遵循Google Python Style Guide和Django最佳实践。
 """
 
-import os
 from pathlib import Path
 from decouple import config
-from loguru import logger
+from config.logging_config import setup_logging
 
-# 项目根目录
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # 安全配置
@@ -46,7 +44,10 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 # 中间件配置
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # CORS中间件，必须在最前面
+    'apps.common.middleware.RequestTrackingMiddleware',  # 请求跟踪中间件，必须在最前面
+    'apps.common.middleware.SecurityHeadersMiddleware',  # 安全头中间件
+    'apps.common.middleware.PerformanceMonitoringMiddleware',  # 性能监控中间件
+    'corsheaders.middleware.CorsMiddleware',  # CORS中间件
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,6 +55,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.common.middleware.RateLimitMiddleware',  # 限流中间件
+    'apps.common.middleware.NinjaResponseFormatterMiddleware',  # Django Ninja响应格式化中间件
+    'apps.common.middleware.ExceptionHandlingMiddleware',  # 异常处理中间件
+    'apps.common.middleware.HealthCheckMiddleware',  # 健康检查中间件，放在最后
 ]
 
 # URL配置
@@ -164,34 +169,14 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
-# 日志配置
-LOG_LEVEL = config('LOG_LEVEL', default='INFO')
-LOG_FILE_PATH = config('LOG_FILE_PATH', default=BASE_DIR / 'logs' / 'django.log')
-
-# 确保日志目录存在
-os.makedirs(LOG_FILE_PATH.parent, exist_ok=True)
-
-# Loguru日志配置
-logger.remove()  # 移除默认处理器
-logger.add(
-    LOG_FILE_PATH,
-    rotation="10 MB",
-    retention="30 days",
-    level=LOG_LEVEL,
-    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}",
-    encoding="utf-8"
-)
-logger.add(
-    lambda msg: print(msg, end=""),
-    level=LOG_LEVEL,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}:{function}:{line}</cyan> | {message}"
-)
-
 # JWT配置
 JWT_SECRET_KEY = config('JWT_SECRET_KEY', default=SECRET_KEY)
 JWT_ALGORITHM = config('JWT_ALGORITHM', default='HS256')
 JWT_ACCESS_TOKEN_LIFETIME = config('JWT_ACCESS_TOKEN_LIFETIME', default=3600, cast=int)  # 1小时
 JWT_REFRESH_TOKEN_LIFETIME = config('JWT_REFRESH_TOKEN_LIFETIME', default=86400, cast=int)  # 24小时
+
+# 日志配置 - 使用loguru
+setup_logging(BASE_DIR)
 
 # Celery配置
 CELERY_BROKER_URL = config('CELERY_REDIS_URL', default='redis://127.0.0.1:6379/2')

@@ -24,16 +24,45 @@ class UsersConfig(AppConfig):
         except ImportError:
             pass
         
-        # 注册权限（仅在非迁移命令执行时）
-        import sys
-        if not ('makemigrations' in sys.argv or 'migrate' in sys.argv):
-            try:
-                self._register_permissions()
-            except Exception as e:
-                print(f"权限注册失败，可能是数据库表尚未创建: {e}")
+        # 注册权限（仅在合适的时机执行）
+        self._safe_register_permissions()
         
         # 注册定时任务
         self._register_tasks()
+    
+    def _safe_register_permissions(self):
+        """安全地注册权限，避免在不合适的时机执行"""
+        import sys
+        from django.core.management import get_commands
+        
+        # 检查是否在执行管理命令
+        management_commands = [
+            'makemigrations', 'migrate', 'showmigrations', 'sqlmigrate',
+            'squashmigrations', 'test', 'check', 'collectstatic',
+            'compilemessages', 'makemessages', 'shell', 'dbshell',
+            'dumpdata', 'loaddata', 'flush', 'inspectdb'
+        ]
+        
+        # 如果在执行管理命令，跳过权限注册
+        if any(cmd in sys.argv for cmd in management_commands):
+            return
+        
+        # 延迟注册权限，确保数据库已经准备好
+        try:
+            from django.db import connection
+            from django.db.utils import OperationalError
+            
+            # 测试数据库连接
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            
+            # 如果数据库连接正常，注册权限
+            self._register_permissions()
+            
+        except (OperationalError, Exception) as e:
+            # 数据库未准备好或其他错误，静默跳过
+            # 在生产环境中，权限应该通过数据迁移或管理命令来创建
+            pass
     
     def _register_permissions(self):
         """注册自定义权限"""

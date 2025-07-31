@@ -6,8 +6,65 @@
 """
 
 from django.db import models
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MinLengthValidator
+from django.utils.translation import gettext_lazy as _
+
 from apps.common.models import BaseModel, SoftDeleteModel, VisibilityChoices
+
+
+# 媒体文件类型枚举
+class MediaFileTypeChoices(models.TextChoices):
+    """媒体文件类型选择枚举"""
+    IMAGE = 'image', _('图片')
+    VIDEO = 'video', _('视频')
+    AUDIO = 'audio', _('音频')
+    DOCUMENT = 'document', _('文档')
+    OTHER = 'other', _('其他')
+
+
+class MediaCategoryChoices(models.TextChoices):
+    """媒体分类选择枚举"""
+    FAMILY_PHOTO = 'family_photo', _('家庭照片')
+    PORTRAIT = 'portrait', _('人物肖像')
+    EVENT = 'event', _('事件记录')
+    DOCUMENT = 'document', _('文档资料')
+    GENEALOGY = 'genealogy', _('族谱资料')
+    MEMORIAL = 'memorial', _('纪念资料')
+    CELEBRATION = 'celebration', _('庆祝活动')
+    DAILY_LIFE = 'daily_life', _('日常生活')
+    OTHER = 'other', _('其他')
+
+
+class ProcessingStatusChoices(models.TextChoices):
+    """处理状态选择枚举"""
+    PENDING = 'pending', _('待处理')
+    PROCESSING = 'processing', _('处理中')
+    COMPLETED = 'completed', _('已完成')
+    FAILED = 'failed', _('处理失败')
+
+
+class AlbumTypeChoices(models.TextChoices):
+    """相册类型选择枚举"""
+    GENERAL = 'general', _('普通相册')
+    EVENT = 'event', _('事件相册')
+    PERSON = 'person', _('人物相册')
+    TIMELINE = 'timeline', _('时间线相册')
+    MEMORIAL = 'memorial', _('纪念相册')
+
+
+class CommentStatusChoices(models.TextChoices):
+    """评论状态选择"""
+    ACTIVE = 'active', _('正常')
+    HIDDEN = 'hidden', _('隐藏')
+    DELETED = 'deleted', _('已删除')
+
+
+class CommentTypeChoices(models.TextChoices):
+    """评论类型选择枚举"""
+    COMMENT = 'comment', _('评论')
+    STORY = 'story', _('故事')
+    MEMORY = 'memory', _('回忆')
+    CORRECTION = 'correction', _('纠正')
 
 
 class MediaFile(SoftDeleteModel):
@@ -71,13 +128,7 @@ class MediaFile(SoftDeleteModel):
     
     file_type = models.CharField(
         max_length=20,
-        choices=[
-            ('image', '图片'),
-            ('video', '视频'),
-            ('audio', '音频'),
-            ('document', '文档'),
-            ('other', '其他'),
-        ],
+        choices=MediaFileTypeChoices.choices,
         verbose_name='文件类型',
         db_comment='文件类型'
     )
@@ -135,18 +186,8 @@ class MediaFile(SoftDeleteModel):
     
     category = models.CharField(
         max_length=50,
-        choices=[
-            ('family_photo', '家庭照片'),
-            ('portrait', '人物肖像'),
-            ('event', '事件记录'),
-            ('document', '文档资料'),
-            ('genealogy', '族谱资料'),
-            ('memorial', '纪念资料'),
-            ('celebration', '庆祝活动'),
-            ('daily_life', '日常生活'),
-            ('other', '其他'),
-        ],
-        default='other',
+        choices=MediaCategoryChoices.choices,
+        default=MediaCategoryChoices.OTHER,
         verbose_name='分类',
         db_comment='媒体文件的分类'
     )
@@ -219,16 +260,11 @@ class MediaFile(SoftDeleteModel):
     # 处理状态
     processing_status = models.CharField(
         max_length=20,
-        choices=[
-            ('pending', '待处理'),
-            ('processing', '处理中'),
-            ('completed', '已完成'),
-            ('failed', '处理失败'),
-        ],
-        default='pending',
+        choices=ProcessingStatusChoices.choices,
+        default=ProcessingStatusChoices.PENDING,
         verbose_name='处理状态',
         help_text='媒体文件的处理状态',
-        db_comment='媒体文件的处理状态'
+        db_comment='处理状态：pending-待处理，processing-处理中，completed-已完成，failed-处理失败'
     )
     
     class Meta:
@@ -243,7 +279,6 @@ class MediaFile(SoftDeleteModel):
             models.Index(fields=['taken_date']),
             models.Index(fields=['is_featured']),
             models.Index(fields=['processing_status']),
-            models.Index(fields=['created_at']),
         ]
         ordering = ['-taken_date', '-created_at']
     
@@ -375,7 +410,6 @@ class MediaMemberTag(BaseModel):
             models.Index(fields=['member_id']),
             models.Index(fields=['tagger_id']),
             models.Index(fields=['is_confirmed']),
-            models.Index(fields=['created_at']),
         ]
         unique_together = [
             ('media_id', 'member_id'),  # 同一媒体文件中同一成员只能被标记一次
@@ -442,17 +476,10 @@ class MediaAlbum(SoftDeleteModel):
     # 相册类型
     album_type = models.CharField(
         max_length=20,
-        choices=[
-            ('general', '通用相册'),
-            ('event', '事件相册'),
-            ('person', '个人相册'),
-            ('year', '年度相册'),
-            ('generation', '世代相册'),
-            ('memorial', '纪念相册'),
-        ],
-        default='general',
+        choices=AlbumTypeChoices.choices,
+        default=AlbumTypeChoices.GENERAL,
         verbose_name='相册类型',
-        db_comment='相册类型：general-通用相册，event-事件相册，person-个人相册，year-年度相册，generation-世代相册，memorial-纪念相册'
+        db_comment='相册类型'
     )
     
     # 相册标签
@@ -522,7 +549,6 @@ class MediaAlbum(SoftDeleteModel):
             models.Index(fields=['album_type']),
             models.Index(fields=['start_date']),
             models.Index(fields=['sort_order']),
-            models.Index(fields=['created_at']),
         ]
         ordering = ['-sort_order', '-created_at']
     
@@ -604,7 +630,6 @@ class MediaAlbumItem(BaseModel):
             models.Index(fields=['album_id']),
             models.Index(fields=['media_id']),
             models.Index(fields=['sort_order']),
-            models.Index(fields=['created_at']),
         ]
         unique_together = [
             ('album_id', 'media_id'),  # 同一媒体文件在同一相册中只能出现一次
@@ -655,12 +680,8 @@ class MediaComment(BaseModel):
     # 评论状态
     status = models.CharField(
         max_length=20,
-        choices=[
-            ('active', '正常'),
-            ('hidden', '隐藏'),
-            ('deleted', '已删除'),
-        ],
-        default='active',
+        choices=CommentStatusChoices.choices,
+        default=CommentStatusChoices.ACTIVE,
         verbose_name='状态',
         db_comment='状态：active-正常，hidden-隐藏，deleted-已删除'
     )
@@ -681,7 +702,6 @@ class MediaComment(BaseModel):
             models.Index(fields=['commenter_id']),
             models.Index(fields=['parent_comment_id']),
             models.Index(fields=['status']),
-            models.Index(fields=['created_at']),
         ]
         ordering = ['-created_at']
     

@@ -11,3 +11,4 @@ dist
 *.log
 logs
 .conda
+.pytest_cache

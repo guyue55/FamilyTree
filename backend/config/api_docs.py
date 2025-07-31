@@ -5,18 +5,17 @@ API文档生成器
 遵循API设计文档规范。
 """
 
-from typing import Dict, Any, List, Optional
+import json
+from typing import Dict, Any, List
 from ninja import NinjaAPI
-from ninja.openapi.schema import OpenAPISchema
 from .api_config import api_config
-
 
 class APIDocumentationGenerator:
     """API文档生成器"""
-    
+
     def __init__(self, api: NinjaAPI):
         self.api = api
-    
+
     def generate_openapi_schema(self) -> Dict[str, Any]:
         """生成OpenAPI 3.0规范的API文档"""
         schema = {
@@ -58,9 +57,9 @@ class APIDocumentationGenerator:
             ],
             "tags": self._generate_tags()
         }
-        
+
         return schema
-    
+
     def _generate_common_schemas(self) -> Dict[str, Any]:
         """生成通用Schema定义"""
         return {
@@ -200,7 +199,7 @@ class APIDocumentationGenerator:
                 "required": ["code", "message", "data", "timestamp", "request_id"]
             }
         }
-    
+
     def _generate_common_responses(self) -> Dict[str, Any]:
         """生成通用响应定义"""
         return {
@@ -275,7 +274,7 @@ class APIDocumentationGenerator:
                 }
             }
         }
-    
+
     def _generate_tags(self) -> List[Dict[str, str]]:
         """生成API标签"""
         return [
@@ -304,27 +303,25 @@ class APIDocumentationGenerator:
                 "description": "媒体文件相关接口"
             }
         ]
-    
+
     def add_custom_schema(self, name: str, schema: Dict[str, Any]) -> None:
         """添加自定义Schema"""
         if not hasattr(self, '_custom_schemas'):
             self._custom_schemas = {}
         self._custom_schemas[name] = schema
-    
+
     def add_custom_response(self, name: str, response: Dict[str, Any]) -> None:
         """添加自定义响应"""
         if not hasattr(self, '_custom_responses'):
             self._custom_responses = {}
         self._custom_responses[name] = response
-    
+
     def export_to_file(self, file_path: str) -> None:
         """导出API文档到文件"""
-        import json
         schema = self.generate_openapi_schema()
-        
+
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(schema, f, indent=2, ensure_ascii=False)
-
 
 def create_api_documentation(api: NinjaAPI) -> APIDocumentationGenerator:
     """创建API文档生成器"""

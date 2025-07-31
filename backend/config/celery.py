@@ -1,3 +1,5 @@
+import os
+from celery import Celery
 """
 族谱系统Celery配置
 
@@ -5,11 +7,6 @@
 用于处理后台任务，如文件处理、邮件发送等。
 """
 
-import os
-from celery import Celery
-from django.conf import settings
-
-# 设置Django设置模块
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 
 # 创建Celery应用实例

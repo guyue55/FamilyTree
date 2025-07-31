@@ -1,7 +1,38 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
-from apps.common.models import BaseModel
+from django.utils.translation import gettext_lazy as _
+from apps.common.models import BaseModel, GenderChoices
+
+
+# 用户隐私级别枚举
+class UserPrivacyLevelChoices(models.TextChoices):
+    """用户隐私级别选择枚举"""
+    PUBLIC = 'public', _('公开')
+    FRIENDS = 'friends', _('仅好友')
+    PRIVATE = 'private', _('私密')
+
+
+class UserThemeChoices(models.TextChoices):
+    """用户界面主题选择枚举"""
+    LIGHT = 'light', _('浅色主题')
+    DARK = 'dark', _('深色主题')
+    AUTO = 'auto', _('自动')
+
+
+class UserLanguageChoices(models.TextChoices):
+    """用户界面语言选择枚举"""
+    ZH_HANS = 'zh-hans', _('简体中文')
+    ZH_HANT = 'zh-hant', _('繁体中文')
+    EN = 'en', _('English')
+
+
+class LoginTypeChoices(models.TextChoices):
+    """登录方式选择枚举"""
+    PASSWORD = 'password', _('密码登录')
+    SMS = 'sms', _('短信登录')
+    EMAIL = 'email', _('邮箱登录')
+    SOCIAL = 'social', _('第三方登录')
 
 
 class User(AbstractUser, BaseModel):
@@ -47,12 +78,8 @@ class User(AbstractUser, BaseModel):
     
     gender = models.CharField(
         max_length=10,
-        choices=[
-            ('male', '男'),
-            ('female', '女'),
-            ('unknown', '未知'),
-        ],
-        default='unknown',
+        choices=GenderChoices.choices,
+        default=GenderChoices.UNKNOWN,
         verbose_name='性别',
         db_comment='性别：male-男，female-女，unknown-未知'
     )
@@ -108,7 +135,6 @@ class User(AbstractUser, BaseModel):
             models.Index(fields=['phone']),
             models.Index(fields=['email']),
             models.Index(fields=['is_active', 'is_verified']),
-            models.Index(fields=['created_at']),
         ]
     
     def __str__(self):
@@ -149,12 +175,8 @@ class UserProfile(BaseModel):
     # 隐私设置
     privacy_level = models.CharField(
         max_length=20,
-        choices=[
-            ('public', '公开'),
-            ('friends', '仅好友'),
-            ('private', '私密'),
-        ],
-        default='friends',
+        choices=UserPrivacyLevelChoices.choices,
+        default=UserPrivacyLevelChoices.FRIENDS,
         verbose_name='隐私级别',
         db_comment='隐私级别：public-公开，friends-仅好友，private-私密'
     )
@@ -175,24 +197,16 @@ class UserProfile(BaseModel):
     # 界面设置
     theme = models.CharField(
         max_length=20,
-        choices=[
-            ('light', '浅色主题'),
-            ('dark', '深色主题'),
-            ('auto', '自动'),
-        ],
-        default='light',
+        choices=UserThemeChoices.choices,
+        default=UserThemeChoices.LIGHT,
         verbose_name='界面主题',
         db_comment='界面主题：light-浅色，dark-深色，auto-自动'
     )
     
     language = models.CharField(
         max_length=10,
-        choices=[
-            ('zh-hans', '简体中文'),
-            ('zh-hant', '繁体中文'),
-            ('en', 'English'),
-        ],
-        default='zh-hans',
+        choices=UserLanguageChoices.choices,
+        default=UserLanguageChoices.ZH_HANS,
         verbose_name='界面语言',
         db_comment='界面语言：zh-hans-简体中文，zh-hant-繁体中文，en-英文'
     )
@@ -247,13 +261,8 @@ class UserLoginLog(BaseModel):
     
     login_type = models.CharField(
         max_length=20,
-        choices=[
-            ('password', '密码登录'),
-            ('sms', '短信登录'),
-            ('email', '邮箱登录'),
-            ('social', '第三方登录'),
-        ],
-        default='password',
+        choices=LoginTypeChoices.choices,
+        default=LoginTypeChoices.PASSWORD,
         verbose_name='登录方式',
         db_comment='登录方式：password-密码，sms-短信，email-邮箱，social-第三方'
     )

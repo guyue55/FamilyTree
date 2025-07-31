@@ -1,3 +1,5 @@
+import os
+from django.core.asgi import get_asgi_application
 """
 族谱系统ASGI配置
 
@@ -5,10 +7,6 @@
 遵循Django最佳实践和ASGI规范。
 """
 
-import os
-from django.core.asgi import get_asgi_application
-
-# 设置Django设置模块
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # 获取ASGI应用

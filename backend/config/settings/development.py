@@ -7,11 +7,12 @@ Django开发环境配置文件
 
 from .base import *
 
+
 # 开发环境标识
 DEBUG = True
 
 # 允许的主机
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']
 
 # 开发环境数据库配置（使用SQLite）
 DATABASES = {
