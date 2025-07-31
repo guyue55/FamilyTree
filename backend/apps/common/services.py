@@ -7,20 +7,17 @@
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Callable, Union
-import logging
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import models, transaction
 from django.db.models import QuerySet, Q
+from loguru import logger
 from .exceptions import raise_if_not_found
 
 User = get_user_model()
 ModelType = TypeVar('ModelType', bound=models.Model)
-
-# 日志记录器
-logger = logging.getLogger(__name__)
 
 # 缓存超时时间常量
 class CacheTimeout:

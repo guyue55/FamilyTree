@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-import logging
+from typing import Any, Dict, List
 import uuid
 import traceback
 from django.http import Http404, HttpRequest, JsonResponse
@@ -22,11 +21,9 @@ from django.db import (
     DatabaseError,
     IntegrityError,
     OperationalError,
-    DataError,
-    InternalError,
-    ProgrammingError,
-    NotSupportedError
+    InternalError
 )
+from loguru import logger
 from .constants import ApiErrorCode, ApiErrorMessage
 from .exceptions import BaseApplicationException
 from .schemas import ErrorResponseSchema
@@ -57,8 +54,6 @@ from config.exception_config import (
 - 健壮性：处理各种边界情况
 - 智能化：集成异常统计、监控和告警
 """
-
-logger = logging.getLogger(__name__)
 
 def generate_request_id() -> str:
     """生成请求ID"""
@@ -167,12 +162,17 @@ class EnhancedExceptionHandler:
                 duration=getattr(request, '_processing_time', 0)
             )
 
-            # 记录日志
-            logger.log(
-                getattr(logging, log_level.upper()),
-                log_message,
-                extra=log_data
-            )
+            # 记录日志 - 使用loguru的方式
+            if log_level.lower() == 'critical':
+                logger.critical(log_message)
+            elif log_level.lower() == 'error':
+                logger.error(log_message)
+            elif log_level.lower() == 'warning':
+                logger.warning(log_message)
+            elif log_level.lower() == 'info':
+                logger.info(log_message)
+            else:
+                logger.debug(log_message)
 
         except Exception as e:
             logger.error(f"Failed to log exception: {e}")

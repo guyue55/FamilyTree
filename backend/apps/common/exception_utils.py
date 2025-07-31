@@ -1,15 +1,12 @@
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 import functools
-import logging
 import time
 from django.conf import settings
 from django.core.cache import cache
 import traceback
+from loguru import logger
 from config.exception_config import (
-    EXCEPTION_HANDLING_CONFIG,
-    PERFORMANCE_MONITORING_CONFIG,
-    SENSITIVE_DATA_CONFIG,
     ALERT_CONFIG,
     EXCEPTION_CATEGORIES
 )
@@ -26,8 +23,6 @@ from config.exception_config import (
 - 可观测性：详细的异常统计和监控
 - 性能优化：最小化性能开销
 """
-
-logger = logging.getLogger(__name__)
 
 class ExceptionStatistics:
     """异常统计类"""
@@ -107,6 +102,31 @@ class ExceptionStatistics:
 
 class SensitiveDataFilter:
     """敏感数据过滤器"""
+
+    def __init__(self, enabled: bool = True, replacement: str = "***"):
+        """
+        初始化敏感数据过滤器
+
+        Args:
+            enabled: 是否启用过滤
+            replacement: 敏感数据的替换字符串
+        """
+        self.enabled = enabled
+        self.replacement = replacement
+        
+        # 敏感字段名列表
+        self.sensitive_fields = {
+            'password', 'passwd', 'pwd', 'secret', 'token', 'key', 'api_key',
+            'access_token', 'refresh_token', 'auth_token', 'authorization',
+            'credit_card', 'card_number', 'cvv', 'ssn', 'social_security',
+            'phone', 'email', 'address', 'id_card', 'passport'
+        }
+        
+        # 敏感HTTP头列表
+        self.sensitive_headers = {
+            'authorization', 'x-api-key', 'x-auth-token', 'cookie',
+            'set-cookie', 'x-csrf-token', 'x-access-token'
+        }
 
     def filter_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """过滤字典中的敏感数据"""
@@ -248,6 +268,41 @@ def exception_context(
         log_level: 日志级别
         reraise: 是否重新抛出异常
     """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                logger.info(f"Starting operation: {operation_name}")
+                result = func(*args, **kwargs)
+                logger.info(f"Operation completed successfully: {operation_name}")
+                return result
+            except Exception as e:
+                # 根据日志级别记录异常
+                log_message = f"Operation failed: {operation_name} - {str(e)}"
+                
+                if log_level.upper() == 'DEBUG':
+                    logger.debug(log_message)
+                elif log_level.upper() == 'INFO':
+                    logger.info(log_message)
+                elif log_level.upper() == 'WARNING':
+                    logger.warning(log_message)
+                elif log_level.upper() == 'ERROR':
+                    logger.error(log_message)
+                elif log_level.upper() == 'CRITICAL':
+                    logger.critical(log_message)
+                else:
+                    logger.error(log_message)
+                
+                # 记录异常统计
+                exception_stats.record_exception(
+                    exception_type=type(e).__name__,
+                    path=operation_name
+                )
+                
+                if reraise:
+                    raise
+                return None
+        return wrapper
     return decorator
 
 def get_exception_info(exception: Exception) -> Dict[str, Any]:
