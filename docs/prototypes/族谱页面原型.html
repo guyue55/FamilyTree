@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>族谱页面UI设计原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 主容器 */
+        .family-tree-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 顶部工具栏 */
+        .graph-toolbar {
+            height: 60px;
+            background: #ffffff;
+            border-bottom: 1px solid #e4e7ed;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toolbar-select, .toolbar-input {
+            height: 32px;
+            padding: 0 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .toolbar-select {
+            width: 140px;
+        }
+
+        .toolbar-input {
+            width: 200px;
+        }
+
+        .toolbar-btn {
+            height: 32px;
+            padding: 0 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .toolbar-btn:hover {
+            background: #f5f7fa;
+            border-color: #c0c4cc;
+        }
+
+        .toolbar-btn.primary {
+            background: #C8102E;
+            color: white;
+            border-color: #C8102E;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #E8394A;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #fafafa;
+            border-right: 1px solid #e4e7ed;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 族谱信息卡片 */
+        .family-info-card {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e4e7ed;
+        }
+
+        .family-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .family-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #C8102E, #E8394A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .family-details h3 {
+            font-size: 16px;
+            color: #262626;
+            margin-bottom: 4px;
+        }
+
+        .family-description {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-bottom: 8px;
+        }
+
+        .family-meta {
+            display: flex;
+            gap: 16px;
+        }
+
+        .meta-item {
+            font-size: 12px;
+            color: #595959;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 快速筛选器 */
+        .quick-filters {
+            padding: 20px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+
+        .filter-title {
+            font-size: 14px;
+            color: #262626;
+            margin-bottom: 16px;
+        }
+
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 12px;
+            color: #595959;
+            margin-bottom: 8px;
+        }
+
+        .filter-checkboxes {
+            display: flex;
+            gap: 12px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #595959;
+        }
+
+        /* 成员列表 */
+        .member-list {
+            flex: 1;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .list-header h4 {
+            font-size: 14px;
+            color: #262626;
+        }
+
+        .add-member-btn {
+            font-size: 12px;
+            color: #C8102E;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .list-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .member-item:hover {
+            background: #f5f7fa;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1890ff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .member-avatar.female {
+            background: #eb2f96;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: 14px;
+            color: #262626;
+            margin-bottom: 2px;
+        }
+
+        .member-meta {
+            font-size: 12px;
+            color: #8c8c8c;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 图形展示区域 */
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .graph-canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+        }
+
+        .graph-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* 族谱节点 */
+        .graph-nodes {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+        }
+
+        .generation {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .graph-node {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .graph-node:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+
+        .node-body {
+            width: 120px;
+            padding: 12px;
+            border-radius: 8px;
+            background: white;
+            border: 3px solid #1890ff;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .node-body.female {
+            border-color: #eb2f96;
+        }
+
+        .node-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #1890ff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 auto 8px;
+            border: 2px solid white;
+        }
+
+        .node-avatar.female {
+            background: #eb2f96;
+        }
+
+        .node-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #262626;
+            margin-bottom: 4px;
+        }
+
+        .node-dates {
+            font-size: 11px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+        }
+
+        .node-generation {
+            font-size: 10px;
+            color: #595959;
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        /* 连接线 */
+        .connection-line {
+            position: absolute;
+            background: #1890ff;
+            z-index: 1;
+        }
+
+        .line-vertical {
+            width: 2px;
+            height: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .line-horizontal {
+            height: 2px;
+            width: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 底部状态栏 */
+        .status-bar {
+            height: 40px;
+            background: #f5f5f5;
+            border-top: 1px solid #e4e7ed;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item strong {
+            color: #262626;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .toolbar-left {
+                gap: 12px;
+            }
+            
+            .toolbar-input {
+                width: 160px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 60px;
+                height: calc(100vh - 100px);
+                z-index: 1000;
+                transition: left 0.3s;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .toolbar-left {
+                gap: 8px;
+            }
+            
+            .toolbar-input {
+                width: 120px;
+            }
+            
+            .generation {
+                gap: 40px;
+            }
+            
+            .node-body {
+                width: 100px;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="family-tree-container">
+        <!-- 顶部工具栏 -->
+        <div class="graph-toolbar">
+            <div class="toolbar-left">
+                <select class="toolbar-select">
+                    <option>垂直树形</option>
+                    <option>水平树形</option>
+                    <option>径向布局</option>
+                    <option>力导向图</option>
+                </select>
+                
+                <select class="toolbar-select">
+                    <option>全部世代</option>
+                    <option>1-3世代</option>
+                    <option>1-5世代</option>
+                    <option>1-7世代</option>
+                </select>
+                
+                <input type="text" class="toolbar-input" placeholder="搜索成员姓名">
+                
+                <button class="toolbar-btn primary">称呼查询</button>
+            </div>
+            
+            <div class="toolbar-right">
+                <button class="toolbar-btn">放大</button>
+                <button class="toolbar-btn">缩小</button>
+                <button class="toolbar-btn">重置</button>
+                <button class="toolbar-btn">全屏</button>
+                <button class="toolbar-btn">视图选项</button>
+                <button class="toolbar-btn primary">导出</button>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <!-- 族谱信息卡片 -->
+                <div class="family-info-card">
+                    <div class="family-header">
+                        <div class="family-avatar">张</div>
+                        <div class="family-details">
+                            <h3>张氏族谱</h3>
+                            <p class="family-description">源远流长的张氏家族</p>
+                            <div class="family-meta">
+                                <span class="meta-item">
+                                    <span>👥</span>
+                                    <span>125人</span>
+                                </span>
+                                <span class="meta-item">
+                                    <span>📅</span>
+                                    <span>8世代</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速筛选器 -->
+                <div class="quick-filters">
+                    <h4 class="filter-title">快速筛选</h4>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">性别</label>
+                        <div class="filter-checkboxes">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" checked> 男性
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" checked> 女性
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">状态</label>
+                        <div class="filter-checkboxes">
+                            <label class="filter-checkbox">
+                                <input type="radio" name="status" checked> 全部
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="radio" name="status"> 在世
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="radio" name="status"> 已故
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成员列表 -->
+                <div class="member-list">
+                    <div class="list-header">
+                        <h4>成员列表</h4>
+                        <button class="add-member-btn">+ 添加成员</button>
+                    </div>
+                    
+                    <div class="list-content">
+                        <div class="member-item">
+                            <div class="member-avatar">张</div>
+                            <div class="member-info">
+                                <div class="member-name">张德华</div>
+                                <div class="member-meta">
+                                    <span>第1世</span>
+                                    <span>男</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">李</div>
+                            <div class="member-info">
+                                <div class="member-name">李美玲</div>
+                                <div class="member-meta">
+                                    <span>第1世</span>
+                                    <span>女</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">张</div>
+                            <div class="member-info">
+                                <div class="member-name">张建国</div>
+                                <div class="member-meta">
+                                    <span>第2世</span>
+                                    <span>男</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar female">王</div>
+                            <div class="member-info">
+                                <div class="member-name">王丽华</div>
+                                <div class="member-meta">
+                                    <span>第2世</span>
+                                    <span>女</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar">张</div>
+                            <div class="member-info">
+                                <div class="member-name">张小明</div>
+                                <div class="member-meta">
+                                    <span>第3世</span>
+                                    <span>男</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="member-item">
+                            <div class="member-avatar female">张</div>
+                            <div class="member-info">
+                                <div class="member-name">张小红</div>
+                                <div class="member-meta">
+                                    <span>第3世</span>
+                                    <span>女</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图形展示区域 -->
+            <div class="graph-container">
+                <div class="graph-canvas">
+                    <div class="graph-nodes">
+                        <!-- 第一世代 -->
+                        <div class="generation">
+                            <div class="graph-node">
+                                <div class="node-body">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张德华</div>
+                                    <div class="node-dates">1920-1995</div>
+                                    <div class="node-generation">第1世</div>
+                                </div>
+                            </div>
+                            
+                            <div class="graph-node">
+                                <div class="node-body female">
+                                    <div class="node-avatar female">李</div>
+                                    <div class="node-name">李美玲</div>
+                                    <div class="node-dates">1925-2000</div>
+                                    <div class="node-generation">第1世</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二世代 -->
+                        <div class="generation">
+                            <div class="graph-node">
+                                <div class="node-body">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张建国</div>
+                                    <div class="node-dates">1950-</div>
+                                    <div class="node-generation">第2世</div>
+                                </div>
+                            </div>
+                            
+                            <div class="graph-node">
+                                <div class="node-body female">
+                                    <div class="node-avatar female">王</div>
+                                    <div class="node-name">王丽华</div>
+                                    <div class="node-dates">1952-</div>
+                                    <div class="node-generation">第2世</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第三世代 -->
+                        <div class="generation">
+                            <div class="graph-node">
+                                <div class="node-body">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张小明</div>
+                                    <div class="node-dates">1980-</div>
+                                    <div class="node-generation">第3世</div>
+                                </div>
+                            </div>
+                            
+                            <div class="graph-node">
+                                <div class="node-body female">
+                                    <div class="node-avatar female">张</div>
+                                    <div class="node-name">张小红</div>
+                                    <div class="node-dates">1982-</div>
+                                    <div class="node-generation">第3世</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部状态栏 -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="status-item">总成员: <strong>125</strong></span>
+                <span class="status-item">已选择: <strong>0</strong></span>
+                <span class="status-item">最后操作: 添加成员</span>
+            </div>
+            
+            <div class="status-right">
+                <span class="status-item">缩放: <strong>100%</strong></span>
+                <span class="status-item">布局: <strong>垂直树形</strong></span>
+                <span class="status-item">最后更新: <strong>2分钟前</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互功能演示
+        document.addEventListener('DOMContentLoaded', function() {
+            // 节点悬浮效果
+            const nodes = document.querySelectorAll('.graph-node');
+            nodes.forEach(node => {
+                node.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.filter = 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15))';
+                });
+                
+                node.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.filter = 'none';
+                });
+                
+                node.addEventListener('click', function() {
+                    // 移除其他节点的选中状态
+                    nodes.forEach(n => n.classList.remove('selected'));
+                    // 添加当前节点的选中状态
+                    this.classList.add('selected');
+                    
+                    // 更新状态栏
+                    const statusSelected = document.querySelector('.status-left .status-item:nth-child(2) strong');
+                    statusSelected.textContent = '1';
+                });
+            });
+
+            // 成员列表项点击效果
+            const memberItems = document.querySelectorAll('.member-item');
+            memberItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    memberItems.forEach(i => i.style.background = '');
+                    this.style.background = '#f0f9ff';
+                });
+            });
+
+            // 工具栏按钮交互
+            const toolbarBtns = document.querySelectorAll('.toolbar-btn');
+            toolbarBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.textContent === '放大') {
+                        const zoomStatus = document.querySelector('.status-right .status-item:nth-child(1) strong');
+                        let currentZoom = parseInt(zoomStatus.textContent);
+                        zoomStatus.textContent = Math.min(currentZoom + 10, 200) + '%';
+                    } else if (this.textContent === '缩小') {
+                        const zoomStatus = document.querySelector('.status-right .status-item:nth-child(1) strong');
+                        let currentZoom = parseInt(zoomStatus.textContent);
+                        zoomStatus.textContent = Math.max(currentZoom - 10, 50) + '%';
+                    } else if (this.textContent === '重置') {
+                        const zoomStatus = document.querySelector('.status-right .status-item:nth-child(1) strong');
+                        zoomStatus.textContent = '100%';
+                    }
+                });
+            });
+
+            // 搜索框交互
+            const searchInput = document.querySelector('.toolbar-input');
+            searchInput.addEventListener('input', function() {
+                const keyword = this.value.toLowerCase();
+                memberItems.forEach(item => {
+                    const name = item.querySelector('.member-name').textContent.toLowerCase();
+                    if (name.includes(keyword)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = keyword ? 'none' : 'flex';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

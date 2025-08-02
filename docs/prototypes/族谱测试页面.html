@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>族谱居中测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        .info-panel {
+            width: 320px;
+            background: white;
+            border-right: 2px solid #ddd;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .info-panel.visible {
+            transform: translateX(0);
+        }
+
+        .family-tree-main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: all 0.3s ease;
+            overflow: auto;
+            position: relative;
+            background: #fafafa;
+        }
+
+        .family-tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-width: 800px;
+            min-height: 600px;
+        }
+
+        .tree-node {
+            width: 120px;
+            height: 60px;
+            background: #fff;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tree-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke: #d4af37;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .connection-dot {
+            fill: #d4af37;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background: #d4af37;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #b8941f;
+        }
+
+        .status {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="info-panel" id="infoPanel">
+            <div style="padding: 20px;">
+                <h3>信息面板</h3>
+                <p>这是一个测试面板</p>
+                <button class="btn" onclick="togglePanel()">关闭面板</button>
+            </div>
+        </div>
+        
+        <div class="family-tree-main" id="familyTreeMain">
+            <div class="family-tree" id="familyTree">
+                <svg class="connections-svg" id="connectionsSvg"></svg>
+                
+                <!-- 第一世 -->
+                <div class="tree-node" style="top: 50px; left: 400px;" data-person="ancestor">始祖</div>
+                
+                <!-- 第二世 -->
+                <div class="tree-node" style="top: 150px; left: 200px;" data-person="son1">长子</div>
+                <div class="tree-node" style="top: 150px; left: 400px;" data-person="son2">次子</div>
+                <div class="tree-node" style="top: 150px; left: 600px;" data-person="son3">三子</div>
+                
+                <!-- 第三世 -->
+                <div class="tree-node" style="top: 250px; left: 100px;" data-person="grandson1">长孙</div>
+                <div class="tree-node" style="top: 250px; left: 300px;" data-person="grandson2">次孙</div>
+                <div class="tree-node" style="top: 250px; left: 500px;" data-person="grandson3">三孙</div>
+                <div class="tree-node" style="top: 250px; left: 700px;" data-person="grandson4">四孙</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="togglePanel()">切换面板</button>
+        <button class="btn" onclick="centerTree()">居中族谱</button>
+        <button class="btn" onclick="drawConnections()">重绘连线</button>
+    </div>
+
+    <div class="status" id="status">
+        面板状态: 关闭<br>
+        族谱位置: 居中
+    </div>
+
+    <script>
+        let isPanelOpen = false;
+
+        function togglePanel() {
+            const panel = document.getElementById('infoPanel');
+            const main = document.getElementById('familyTreeMain');
+            
+            isPanelOpen = !isPanelOpen;
+            
+            if (isPanelOpen) {
+                panel.classList.add('visible');
+                main.classList.add('panel-open');
+            } else {
+                panel.classList.remove('visible');
+                main.classList.remove('panel-open');
+            }
+            
+            updateStatus();
+            setTimeout(centerTree, 100);
+            setTimeout(drawConnections, 200);
+        }
+
+        function centerTree() {
+            const main = document.getElementById('familyTreeMain');
+            const tree = document.getElementById('familyTree');
+            
+            // 重置样式
+            main.style.marginRight = '';
+            main.style.width = '';
+            main.style.transform = '';
+            
+            const viewportWidth = window.innerWidth;
+            const panelWidth = isPanelOpen ? 320 : 0;
+            
+            if (isPanelOpen) {
+                // 面板打开时调整
+                const availableWidth = viewportWidth - panelWidth;
+                const centerOffset = panelWidth / 2;
+                
+                main.style.marginRight = `${panelWidth}px`;
+                main.style.width = `${availableWidth}px`;
+                main.style.transform = `translateX(${-centerOffset/2}px)`;
+            } else {
+                // 面板关闭时
+                main.style.width = '100%';
+                main.style.marginRight = '0';
+                main.style.transform = 'translateX(0)';
+            }
+            
+            updateStatus();
+        }
+
+        function drawConnections() {
+            const svg = document.getElementById('connectionsSvg');
+            svg.innerHTML = '';
+            
+            // 获取所有节点
+            const nodes = document.querySelectorAll('.tree-node');
+            const nodeData = {};
+            
+            nodes.forEach(node => {
+                const rect = node.getBoundingClientRect();
+                const treeRect = document.getElementById('familyTree').getBoundingClientRect();
+                nodeData[node.dataset.person] = {
+                    x: rect.left - treeRect.left + rect.width / 2,
+                    y: rect.top - treeRect.top + rect.height / 2
+                };
+            });
+            
+            // 绘制连线
+            const connections = [
+                { parent: 'ancestor', children: ['son1', 'son2', 'son3'] },
+                { parent: 'son1', children: ['grandson1', 'grandson2'] },
+                { parent: 'son3', children: ['grandson3', 'grandson4'] }
+            ];
+            
+            connections.forEach(conn => {
+                if (nodeData[conn.parent]) {
+                    drawParentChildGroup(svg, nodeData[conn.parent], conn.children.map(c => nodeData[c]).filter(Boolean));
+                }
+            });
+        }
+
+        function drawParentChildGroup(svg, parent, children) {
+            if (children.length === 0) return;
+            
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            
+            const parentX = parent.x;
+            const parentY = parent.y + 30;
+            
+            if (children.length === 1) {
+                // 单个子节点
+                const child = children[0];
+                const childX = child.x;
+                const childY = child.y - 30;
+                
+                if (Math.abs(parentX - childX) <= 5) {
+                    // 直线连接
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', parentX);
+                    line.setAttribute('y1', parentY);
+                    line.setAttribute('x2', childX);
+                    line.setAttribute('y2', childY);
+                    line.setAttribute('class', 'connection-line');
+                    g.appendChild(line);
+                } else {
+                    // L形连接
+                    const midY = parentY + (childY - parentY) * 0.5;
+                    
+                    const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line1.setAttribute('x1', parentX);
+                    line1.setAttribute('y1', parentY);
+                    line1.setAttribute('x2', parentX);
+                    line1.setAttribute('y2', midY);
+                    line1.setAttribute('class', 'connection-line');
+                    g.appendChild(line1);
+                    
+                    const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line2.setAttribute('x1', parentX);
+                    line2.setAttribute('y1', midY);
+                    line2.setAttribute('x2', childX);
+                    line2.setAttribute('y2', midY);
+                    line2.setAttribute('class', 'connection-line');
+                    g.appendChild(line2);
+                    
+                    const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line3.setAttribute('x1', childX);
+                    line3.setAttribute('y1', midY);
+                    line3.setAttribute('x2', childX);
+                    line3.setAttribute('y2', childY);
+                    line3.setAttribute('class', 'connection-line');
+                    g.appendChild(line3);
+                }
+            } else {
+                // 多个子节点 - T形结构
+                const childrenX = children.map(child => child.x);
+                const minChildX = Math.min(...childrenX);
+                const maxChildX = Math.max(...childrenX);
+                const firstChildY = children[0].y - 30;
+                
+                const branchY = parentY + (firstChildY - parentY) * 0.6;
+                
+                // 主干线
+                const mainLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                mainLine.setAttribute('x1', parentX);
+                mainLine.setAttribute('y1', parentY);
+                mainLine.setAttribute('x2', parentX);
+                mainLine.setAttribute('y2', branchY);
+                mainLine.setAttribute('class', 'connection-line');
+                g.appendChild(mainLine);
+                
+                // 水平分支线
+                const branchLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                branchLine.setAttribute('x1', minChildX);
+                branchLine.setAttribute('y1', branchY);
+                branchLine.setAttribute('x2', maxChildX);
+                branchLine.setAttribute('y2', branchY);
+                branchLine.setAttribute('class', 'connection-line');
+                g.appendChild(branchLine);
+                
+                // 到每个子节点的连线
+                children.forEach(child => {
+                    const childLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    childLine.setAttribute('x1', child.x);
+                    childLine.setAttribute('y1', branchY);
+                    childLine.setAttribute('x2', child.x);
+                    childLine.setAttribute('y2', child.y - 30);
+                    childLine.setAttribute('class', 'connection-line');
+                    g.appendChild(childLine);
+                    
+                    // 连接点
+                    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    dot.setAttribute('cx', child.x);
+                    dot.setAttribute('cy', branchY);
+                    dot.setAttribute('r', '3');
+                    dot.setAttribute('class', 'connection-dot');
+                    g.appendChild(dot);
+                });
+                
+                // 主分支点
+                const mainDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                mainDot.setAttribute('cx', parentX);
+                mainDot.setAttribute('cy', branchY);
+                mainDot.setAttribute('r', '4');
+                mainDot.setAttribute('class', 'connection-dot');
+                g.appendChild(mainDot);
+            }
+            
+            svg.appendChild(g);
+        }
+
+        function updateStatus() {
+            const status = document.getElementById('status');
+            status.innerHTML = `
+                面板状态: ${isPanelOpen ? '打开' : '关闭'}<br>
+                窗口宽度: ${window.innerWidth}px<br>
+                可用宽度: ${isPanelOpen ? window.innerWidth - 320 : window.innerWidth}px
+            `;
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            centerTree();
+            drawConnections();
+            updateStatus();
+        });
+
+        window.addEventListener('resize', () => {
+            centerTree();
+            setTimeout(drawConnections, 100);
+        });
+    </script>
+</body>
+</html>

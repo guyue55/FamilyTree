@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>族谱页面完整UI设计图</title>
+    <style>
+        /* 全局重置和基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 主色调 - 传统中国红 */
+            --primary-color: #c8102e;
+            --primary-light: #e8394a;
+            --primary-dark: #a00d24;
+            --primary-bg: #fff2f0;
+
+            /* 辅助色 - 墨色系 */
+            --secondary-color: #2c3e50;
+            --secondary-light: #34495e;
+            --secondary-dark: #1a252f;
+
+            /* 中性色 */
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --text-muted: #bdc3c7;
+            --text-light: #ecf0f1;
+            --background: #ffffff;
+            --background-light: #f8f9fa;
+            --background-dark: #e9ecef;
+            --border: #e9ecef;
+            --border-light: #f1f3f4;
+
+            /* 功能色 */
+            --success: #27ae60;
+            --warning: #f39c12;
+            --error: #e74c3c;
+            --info: #3498db;
+
+            /* 阴影系统 */
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
+            --shadow-xl: 0 12px 24px rgba(0,0,0,0.18);
+
+            /* 间距系统 */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+
+            /* 圆角系统 */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 50%;
+
+            /* 字体大小 */
+            --font-xs: 12px;
+            --font-sm: 14px;
+            --font-base: 16px;
+            --font-lg: 18px;
+            --font-xl: 20px;
+            --font-2xl: 24px;
+            --font-3xl: 32px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: var(--background-light);
+            color: var(--text-primary);
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        /* 页面布局 */
+        .family-tree-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--background-light);
+        }
+
+        /* 顶部导航栏 */
+        .page-header {
+            height: 64px;
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            position: relative;
+        }
+
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: var(--font-lg);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-2px);
+        }
+
+        .page-title {
+            font-size: var(--font-lg);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .title-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-sm);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .header-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-weight: 500;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .header-btn.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .header-btn.primary:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            height: 72px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            z-index: 999;
+            position: relative;
+        }
+
+        .toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--border) 20%, var(--border) 80%, transparent 100%);
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--background-light);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .toolbar-label {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toolbar-select {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: white;
+            font-size: var(--font-sm);
+            cursor: pointer;
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+
+        .toolbar-select:hover,
+        .toolbar-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
+            outline: none;
+        }
+
+        .toolbar-input {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            width: 240px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .toolbar-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
+            outline: none;
+        }
+
+        .toolbar-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .toolbar-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: white;
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toolbar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .toolbar-btn:hover::before {
+            left: 100%;
+        }
+
+        .toolbar-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toolbar-btn.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: white;
+        }
+
+        .btn-group .toolbar-btn {
+            border: none;
+            border-radius: 0;
+            border-right: 1px solid var(--border);
+        }
+
+        .btn-group .toolbar-btn:last-child {
+            border-right: none;
+        }
+
+        .btn-group .toolbar-btn:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: var(--background-light);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 360px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            right: -15px;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-sm);
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--background-light);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            background: linear-gradient(135deg, var(--background-light) 0%, white 100%);
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            padding: var(--spacing-md) var(--spacing-sm);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+        }
+
+        .sidebar.collapsed .sidebar-content {
+            display: none;
+        }
+
+        /* 族谱信息卡片 */
+        .family-info-card {
+            background: linear-gradient(135deg, white 0%, var(--background-light) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .family-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        }
+
+        .family-name {
+            font-size: var(--font-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .family-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--primary-color);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--font-sm);
+        }
+
+        .family-desc {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.6;
+        }
+
+        .family-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: var(--spacing-sm);
+            background: white;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            margin-top: var(--spacing-xs);
+            font-size: var(--font-xs);
+            font-weight: 500;
+        }
+
+        /* 筛选器 */
+        .filters-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .section-title {
+            font-size: var(--font-base);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .section-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--font-xs);
+        }
+
+        .filter-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .filter-tag {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--background-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(200, 16, 46, 0.1), transparent);
+            transition: left 0.3s;
+        }
+
+        .filter-tag:hover::before {
+            left: 100%;
+        }
+
+        .filter-tag:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .filter-tag.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .filter-tag.active:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+
+        /* 成员列表 */
+        .members-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .members-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .add-member-btn {
+            background: var(--success);
+            border: none;
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-weight: 500;
+        }
+
+        .add-member-btn:hover {
+            background: #2ecc71;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .members-list {
+            flex: 1;
+            overflow-y: auto;
+            margin: 0 calc(-1 * var(--spacing-md));
+            padding: 0 var(--spacing-md);
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: var(--spacing-xs);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(200, 16, 46, 0.05), transparent);
+            transition: left 0.3s;
+        }
+
+        .member-item:hover::before {
+            left: 100%;
+        }
+
+        .member-item:hover {
+            background: var(--background-light);
+            border-color: var(--border);
+            transform: translateX(4px);
+        }
+
+        .member-item.selected {
+            background: var(--primary-bg);
+            border-color: var(--primary-color);
+            transform: translateX(8px);
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-sm);
+            font-weight: 600;
+            margin-right: var(--spacing-md);
+            border: 2px solid white;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-avatar.female {
+            background: #eb2f96;
+        }
+
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .member-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-size: var(--font-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-details {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .member-tag {
+            background: var(--background-light);
+            padding: 2px var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* 图形展示区域 */
+        .graph-area {
+            flex: 1;
+            background: white;
+            margin: var(--spacing-md) var(--spacing-md) var(--spacing-md) 0;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, #fafafa 0%, #f0f0f0 50%, #e8e8e8 100%);
+        }
+
+        .graph-overlay {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            z-index: 10;
+        }
+
+        .graph-control {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+        }
+
+        .graph-control:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        /* 族谱节点 */
+        .family-tree {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 80px;
+        }
+
+        .generation {
+            display: flex;
+            align-items: center;
+            gap: 100px;
+            position: relative;
+        }
+
+        .tree-node {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+        }
+
+        .tree-node:hover {
+            transform: scale(1.08) translateY(-4px);
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+            z-index: 3;
+        }
+
+        .node-body {
+            width: 140px;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            background: white;
+            border: 3px solid var(--primary-color);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .node-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        }
+
+        .node-body.female {
+            border-color: #eb2f96;
+            background: linear-gradient(135deg, #fff0f6 0%, #ffadd6 20%, white 100%);
+        }
+
+        .node-body.female::before {
+            background: linear-gradient(90deg, #eb2f96 0%, #f759ab 100%);
+        }
+
+        .node-body.male {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-bg) 0%, #ffa39e 20%, white 100%);
+        }
+
+        .node-avatar {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto var(--spacing-sm);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            background: var(--background-light);
+        }
+
+        .node-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-lg);
+            font-weight: 700;
+        }
+
+        .avatar-placeholder.female {
+            background: #eb2f96;
+        }
+
+        .node-name {
+            font-size: var(--font-base);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .node-dates {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+            line-height: 1.4;
+        }
+
+        .node-generation {
+            font-size: 10px;
+            color: var(--text-secondary);
+            background: var(--background-light);
+            padding: 2px var(--spacing-xs);
+            border-radius: var(--radius-md);
+            display: inline-block;
+            font-weight: 500;
+            border: 1px solid var(--border);
+        }
+
+        .node-status {
+            position: absolute;
+            top: var(--spacing-sm);
+            right: var(--spacing-sm);
+            width: 12px;
+            height: 12px;
+            border-radius: var(--radius-full);
+            background: var(--success);
+            border: 2px solid white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .node-status.deceased {
+            background: var(--text-muted);
+        }
+
+        /* 连接线 */
+        .connection-line {
+            position: absolute;
+            background: linear-gradient(135deg, var(--border) 0%, var(--text-muted) 100%);
+            z-index: 1;
+            border-radius: 1px;
+        }
+
+        .vertical-line {
+            width: 3px;
+            height: 50px;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .horizontal-line {
+            height: 3px;
+            width: 200px;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 48px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-section {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-weight: 500;
+        }
+
+        .status-icon {
+            width: 16px;
+            height: 16px;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+
+        .status-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1400px) {
+            .sidebar {
+                width: 320px;
+            }
+            
+            .toolbar-input {
+                width: 200px;
+            }
+            
+            .generation {
+                gap: 80px;
+            }
+            
+            .node-body {
+                width: 120px;
+                padding: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 280px;
+            }
+            
+            .toolbar-section {
+                gap: var(--spacing-sm);
+            }
+            
+            .generation {
+                gap: 60px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 0 var(--spacing-md);
+                height: 56px;
+            }
+            
+            .page-title {
+                font-size: var(--font-base);
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                height: auto;
+                padding: var(--spacing-md);
+                gap: var(--spacing-md);
+            }
+            
+            .toolbar-section {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .toolbar-input {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 120px;
+                height: calc(100vh - 168px);
+                z-index: 1000;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 320px;
+            }
+            
+            .sidebar:not(.collapsed) {
+                transform: translateX(0);
+            }
+            
+            .graph-area {
+                margin: var(--spacing-md);
+            }
+            
+            .generation {
+                gap: 40px;
+            }
+            
+            .node-body {
+                width: 100px;
+                padding: var(--spacing-sm);
+            }
+            
+            .node-avatar {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .status-bar {
+                height: 40px;
+                padding: 0 var(--spacing-md);
+            }
+            
+            .status-section {
+                gap: var(--spacing-md);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .tree-node {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tree-node:nth-child(1) { animation-delay: 0.1s; }
+        .tree-node:nth-child(2) { animation-delay: 0.2s; }
+        .tree-node:nth-child(3) { animation-delay: 0.3s; }
+        .tree-node:nth-child(4) { animation-delay: 0.4s; }
+        .tree-node:nth-child(5) { animation-delay: 0.5s; }
+
+        .sidebar > * {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .family-info-card:hover {
+            animation: pulse 2s infinite;
+        }
+
+        /* 滚动条样式 */
+        .members-list::-webkit-scrollbar,
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .members-list::-webkit-scrollbar-track,
+        .sidebar-content::-webkit-scrollbar-track {
+            background: var(--background-light);
+            border-radius: var(--radius-sm);
+        }
+
+        .members-list::-webkit-scrollbar-thumb,
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .members-list::-webkit-scrollbar-thumb:hover,
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* 加载状态 */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            margin: -20px 0 0 -20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="family-tree-page">
+        <!-- 顶部导航栏 -->
+        <div class="page-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()" title="返回">
+                    ←
+                </button>
+                <div class="page-title">
+                    <div class="title-icon">族</div>
+                    张氏家族族谱
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" onclick="shareFamily()" title="分享族谱">
+                    📤 分享
+                </button>
+                <button class="header-btn" onclick="openSettings()" title="族谱设置">
+                    ⚙️ 设置
+                </button>
+                <button class="header-btn primary" onclick="inviteMembers()" title="邀请成员">
+                    👥 邀请成员
+                </button>
+            </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <div class="toolbar-group">
+                    <span class="toolbar-label">布局</span>
+                    <select class="toolbar-select" onchange="changeLayout(this.value)">
+                        <option value="tree-vertical">垂直树形</option>
+                        <option value="tree-horizontal">水平树形</option>
+                        <option value="radial">径向布局</option>
+                        <option value="force">力导向布局</option>
+                    </select>
+                </div>
+                
+                <div class="toolbar-group">
+                    <span class="toolbar-label">世代</span>
+                    <select class="toolbar-select" onchange="filterGeneration(this.value)">
+                        <option value="all">全部世代</option>
+                        <option value="1-3">第1-3代</option>
+                        <option value="4-6">第4-6代</option>
+                        <option value="7-9">第7-9代</option>
+                    </select>
+                </div>
+
+                <input type="text" class="toolbar-input" placeholder="🔍 搜索成员姓名、字号..." onkeyup="searchMembers(this.value)">
+            </div>
+
+            <div class="toolbar-section">
+                <button class="toolbar-btn" onclick="openRelationshipQuery()" title="称呼查询">
+                    🔗 称呼查询
+                </button>
+                
+                <div class="btn-group">
+                    <button class="toolbar-btn" onclick="zoomOut()" title="缩小">🔍-</button>
+                    <button class="toolbar-btn" onclick="resetZoom()" title="重置">100%</button>
+                    <button class="toolbar-btn" onclick="zoomIn()" title="放大">🔍+</button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="toolbar-btn" onclick="togglePhotos()" title="显示/隐藏照片">📷</button>
+                    <button class="toolbar-btn" onclick="toggleDates()" title="显示/隐藏日期">📅</button>
+                    <button class="toolbar-btn" onclick="toggleGeneration()" title="显示/隐藏世代">🏷️</button>
+                </div>
+
+                <select class="toolbar-select" onchange="exportFamily(this.value)">
+                    <option value="">📥 导出</option>
+                    <option value="png">导出为图片</option>
+                    <option value="pdf">导出为PDF</option>
+                    <option value="excel">导出为Excel</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-toggle" onclick="toggleSidebar()" title="折叠/展开侧边栏">
+                    ◀
+                </div>
+                
+                <div class="sidebar-header">
+                    <div class="family-info-card">
+                        <div class="family-name">
+                            <div class="family-icon">张</div>
+                            张氏家族
+                        </div>
+                        <div class="family-desc">
+                            源远流长的张氏家族，始祖张公讳德明，明朝洪武年间自山西洪洞迁至此地，繁衍至今已传十三代，族人遍布海内外。
+                        </div>
+                        <div class="family-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">156</span>
+                                <div class="stat-label">总成员</div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">13</span>
+                                <div class="stat-label">世代数</div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">89</span>
+                                <div class="stat-label">在世</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-content">
+                    <!-- 筛选器 -->
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <div class="section-icon">🔍</div>
+                            筛选条件
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">性别</div>
+                            <div class="filter-tags">
+                                <div class="filter-tag active" onclick="toggleFilter(this, 'gender', 'all')">全部</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'gender', 'male')">男性</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'gender', 'female')">女性</div>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-label">状态</div>
+                            <div class="filter-tags">
+                                <div class="filter-tag active" onclick="toggleFilter(this, 'status', 'all')">全部</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'status', 'living')">在世</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'status', 'deceased')">已故</div>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-label">婚姻状况</div>
+                            <div class="filter-tags">
+                                <div class="filter-tag active" onclick="toggleFilter(this, 'marriage', 'all')">全部</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'marriage', 'married')">已婚</div>
+                                <div class="filter-tag" onclick="toggleFilter(this, 'marriage', 'single')">未婚</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成员列表 -->
+                    <div class="members-section">
+                        <div class="members-header">
+                            <div class="section-title">
+                                <div class="section-icon">👥</div>
+                                成员列表
+                            </div>
+                            <button class="add-member-btn" onclick="addMember()" title="添加新成员">
+                                ➕ 添加
+                            </button>
+                        </div>
+                        
+                        <div class="members-list">
+                            <div class="member-item selected" onclick="selectMember(this, 1)">
+                                <div class="member-avatar male">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNjODEwMmUiLz4KPHRleHQgeD0iNTAlIiB5PSI1NSUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+5byg5b635piOPC90ZXh0Pgo8L3N2Zz4K" alt="张德明">
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-name">张德明</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第1代</span>
+                                        <span>1368-1435</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 2)">
+                                <div class="member-avatar female">李</div>
+                                <div class="member-info">
+                                    <div class="member-name">李氏</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第1代</span>
+                                        <span>1372-1438</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 3)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张文华</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第2代</span>
+                                        <span>1395-1468</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 4)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张文武</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第2代</span>
+                                        <span>1398-1471</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 5)">
+                                <div class="member-avatar female">王</div>
+                                <div class="member-info">
+                                    <div class="member-name">王氏</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第2代</span>
+                                        <span>1400-1475</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 6)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张志远</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第3代</span>
+                                        <span>1420-1489</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 7)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张志高</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第3代</span>
+                                        <span>1422-1491</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 8)">
+                                <div class="member-avatar female">赵</div>
+                                <div class="member-info">
+                                    <div class="member-name">赵氏</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第3代</span>
+                                        <span>1425-1494</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 9)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张明轩</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第4代</span>
+                                        <span>1445-1512</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="member-item" onclick="selectMember(this, 10)">
+                                <div class="member-avatar male">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张明达</div>
+                                    <div class="member-details">
+                                        <span class="member-tag">第4代</span>
+                                        <span>1447-1515</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图形展示区域 -->
+            <div class="graph-area">
+                <div class="graph-overlay">
+                    <div class="graph-control" onclick="fitToScreen()" title="适应屏幕">⌂</div>
+                    <div class="graph-control" onclick="centerGraph()" title="居中显示">⊙</div>
+                    <div class="graph-control" onclick="fullscreen()" title="全屏显示">⛶</div>
+                </div>
+
+                <div class="graph-container">
+                    <!-- 族谱树形结构 -->
+                    <div class="family-tree">
+                        <!-- 第一代 -->
+                        <div class="generation">
+                            <div class="tree-node" onclick="showMemberDetail(1)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body male">
+                                    <div class="node-status"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder male">张</div>
+                                    </div>
+                                    <div class="node-name">张德明</div>
+                                    <div class="node-dates">1368-1435</div>
+                                    <div class="node-generation">第1代</div>
+                                </div>
+                            </div>
+
+                            <div class="tree-node" onclick="showMemberDetail(2)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body female">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder female">李</div>
+                                    </div>
+                                    <div class="node-name">李氏</div>
+                                    <div class="node-dates">1372-1438</div>
+                                    <div class="node-generation">第1代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 连接线 -->
+                        <div class="connection-line horizontal-line"></div>
+
+                        <!-- 第二代 -->
+                        <div class="generation">
+                            <div class="tree-node" onclick="showMemberDetail(3)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body male">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder male">张</div>
+                                    </div>
+                                    <div class="node-name">张文华</div>
+                                    <div class="node-dates">1395-1468</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                            </div>
+
+                            <div class="tree-node" onclick="showMemberDetail(4)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body male">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder male">张</div>
+                                    </div>
+                                    <div class="node-name">张文武</div>
+                                    <div class="node-dates">1398-1471</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                            </div>
+
+                            <div class="tree-node" onclick="showMemberDetail(5)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body female">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder female">王</div>
+                                    </div>
+                                    <div class="node-name">王氏</div>
+                                    <div class="node-dates">1400-1475</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 连接线 -->
+                        <div class="connection-line horizontal-line"></div>
+
+                        <!-- 第三代 -->
+                        <div class="generation">
+                            <div class="tree-node" onclick="showMemberDetail(6)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body male">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder male">张</div>
+                                    </div>
+                                    <div class="node-name">张志远</div>
+                                    <div class="node-dates">1420-1489</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                            </div>
+
+                            <div class="tree-node" onclick="showMemberDetail(7)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body male">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder male">张</div>
+                                    </div>
+                                    <div class="node-name">张志高</div>
+                                    <div class="node-dates">1422-1491</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                            </div>
+
+                            <div class="tree-node" onclick="showMemberDetail(8)">
+                                <div class="connection-line vertical-line"></div>
+                                <div class="node-body female">
+                                    <div class="node-status deceased"></div>
+                                    <div class="node-avatar">
+                                        <div class="avatar-placeholder female">赵</div>
+                                    </div>
+                                    <div class="node-name">赵氏</div>
+                                    <div class="node-dates">1425-1494</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-section">
+                <div class="status-item">
+                    <div class="status-icon">👥</div>
+                    <span>总成员: <span class="status-value">156</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon">📊</div>
+                    <span>当前显示: <span class="status-value">第1-3代</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon">🔍</div>
+                    <span>缩放: <span class="status-value">100%</span></span>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="status-item">
+                    <div class="status-icon">📅</div>
+                    <span>最后更新: <span class="status-value">今天 14:30</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon">👤</div>
+                    <span>当前用户: <span class="status-value">张明华</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态管理
+         const state = {
+             sidebarCollapsed: false,
+             selectedMember: 1,
+             currentLayout: 'tree-vertical',
+             zoomLevel: 100,
+             showPhotos: true,
+             showDates: true,
+             showGeneration: true,
+             filters: {
+                 gender: 'all',
+                 status: 'all',
+                 marriage: 'all'
+             }
+         };
+
+         // 侧边栏控制
+         function toggleSidebar() {
+             const sidebar = document.getElementById('sidebar');
+             state.sidebarCollapsed = !state.sidebarCollapsed;
+             sidebar.classList.toggle('collapsed');
+             
+             // 更新切换按钮
+             const toggleBtn = sidebar.querySelector('.sidebar-toggle');
+             toggleBtn.innerHTML = state.sidebarCollapsed ? '▶' : '◀';
+             toggleBtn.title = state.sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏';
+         }
+
+         // 成员选择
+         function selectMember(element, memberId) {
+             // 移除所有选中状态
+             document.querySelectorAll('.member-item').forEach(item => {
+                 item.classList.remove('selected');
+             });
+             
+             // 添加选中状态
+             element.classList.add('selected');
+             state.selectedMember = memberId;
+             
+             // 高亮对应的族谱节点
+             highlightTreeNode(memberId);
+             
+             console.log('选中成员:', memberId);
+         }
+
+         // 高亮族谱节点
+         function highlightTreeNode(memberId) {
+             document.querySelectorAll('.tree-node').forEach(node => {
+                 node.classList.remove('highlighted');
+             });
+             
+             // 这里可以根据memberId找到对应的节点并高亮
+             // 简化处理，实际应该根据数据结构来匹配
+         }
+
+         // 筛选器切换
+         function toggleFilter(element, filterType, value) {
+             const parent = element.parentElement;
+             parent.querySelectorAll('.filter-tag').forEach(tag => {
+                 tag.classList.remove('active');
+             });
+             element.classList.add('active');
+             
+             state.filters[filterType] = value;
+             applyFilters();
+         }
+
+         // 应用筛选器
+         function applyFilters() {
+             const members = document.querySelectorAll('.member-item');
+             const treeNodes = document.querySelectorAll('.tree-node');
+             
+             members.forEach(member => {
+                 let show = true;
+                 
+                 // 这里应该根据实际的成员数据进行筛选
+                 // 简化处理，显示所有成员
+                 member.style.display = show ? 'flex' : 'none';
+             });
+             
+             console.log('应用筛选器:', state.filters);
+         }
+
+         // 工具栏功能
+         function changeLayout(value) {
+             state.currentLayout = value;
+             const graphContainer = document.querySelector('.graph-container');
+             
+             // 移除所有布局类
+             graphContainer.classList.remove('layout-vertical', 'layout-horizontal', 'layout-radial', 'layout-force');
+             
+             // 添加新布局类
+             switch(value) {
+                 case 'tree-vertical':
+                     graphContainer.classList.add('layout-vertical');
+                     break;
+                 case 'tree-horizontal':
+                     graphContainer.classList.add('layout-horizontal');
+                     break;
+                 case 'radial':
+                     graphContainer.classList.add('layout-radial');
+                     break;
+                 case 'force':
+                     graphContainer.classList.add('layout-force');
+                     break;
+             }
+             
+             console.log('切换布局:', value);
+         }
+
+         function filterGeneration(value) {
+             const generations = document.querySelectorAll('.generation');
+             
+             generations.forEach((gen, index) => {
+                 let show = true;
+                 
+                 switch(value) {
+                     case '1-3':
+                         show = index < 3;
+                         break;
+                     case '4-6':
+                         show = index >= 3 && index < 6;
+                         break;
+                     case '7-9':
+                         show = index >= 6 && index < 9;
+                         break;
+                     default:
+                         show = true;
+                 }
+                 
+                 gen.style.display = show ? 'flex' : 'none';
+             });
+             
+             console.log('筛选世代:', value);
+         }
+
+         function searchMembers(keyword) {
+             const members = document.querySelectorAll('.member-item');
+             
+             if (!keyword.trim()) {
+                 members.forEach(member => member.style.display = 'flex');
+                 return;
+             }
+             
+             members.forEach(member => {
+                 const name = member.querySelector('.member-name').textContent;
+                 const show = name.toLowerCase().includes(keyword.toLowerCase());
+                 member.style.display = show ? 'flex' : 'none';
+             });
+             
+             console.log('搜索成员:', keyword);
+         }
+
+         function openRelationshipQuery() {
+             alert('称呼查询功能\n\n请按以下步骤操作：\n1. 选择第一个成员\n2. 按住Ctrl键选择第二个成员\n3. 系统将自动计算两人关系');
+         }
+
+         // 缩放控制
+         function zoomIn() {
+             if (state.zoomLevel < 200) {
+                 state.zoomLevel += 10;
+                 applyZoom();
+             }
+         }
+
+         function zoomOut() {
+             if (state.zoomLevel > 50) {
+                 state.zoomLevel -= 10;
+                 applyZoom();
+             }
+         }
+
+         function resetZoom() {
+             state.zoomLevel = 100;
+             applyZoom();
+         }
+
+         function applyZoom() {
+             const familyTree = document.querySelector('.family-tree');
+             familyTree.style.transform = `scale(${state.zoomLevel / 100})`;
+             
+             // 更新状态栏
+             const zoomStatus = document.querySelector('.status-bar .status-value');
+             if (zoomStatus) {
+                 zoomStatus.textContent = `${state.zoomLevel}%`;
+             }
+             
+             // 更新工具栏按钮文本
+             const resetBtn = document.querySelector('.btn-group .toolbar-btn:nth-child(2)');
+             if (resetBtn) {
+                 resetBtn.textContent = `${state.zoomLevel}%`;
+             }
+         }
+
+         // 视图选项
+         function togglePhotos() {
+             state.showPhotos = !state.showPhotos;
+             const avatars = document.querySelectorAll('.node-avatar');
+             
+             avatars.forEach(avatar => {
+                 avatar.style.display = state.showPhotos ? 'block' : 'none';
+             });
+             
+             console.log('切换照片显示:', state.showPhotos);
+         }
+
+         function toggleDates() {
+             state.showDates = !state.showDates;
+             const dates = document.querySelectorAll('.node-dates');
+             
+             dates.forEach(date => {
+                 date.style.display = state.showDates ? 'block' : 'none';
+             });
+             
+             console.log('切换日期显示:', state.showDates);
+         }
+
+         function toggleGeneration() {
+             state.showGeneration = !state.showGeneration;
+             const generations = document.querySelectorAll('.node-generation');
+             
+             generations.forEach(gen => {
+                 gen.style.display = state.showGeneration ? 'inline-block' : 'none';
+             });
+             
+             console.log('切换世代显示:', state.showGeneration);
+         }
+
+         // 导出功能
+         function exportFamily(format) {
+             if (!format) return;
+             
+             const messages = {
+                 'png': '正在导出为PNG图片...',
+                 'pdf': '正在导出为PDF文档...',
+                 'excel': '正在导出为Excel表格...'
+             };
+             
+             alert(messages[format] || '导出功能开发中');
+             
+             // 重置选择
+             const select = document.querySelector('select[onchange="exportFamily(this.value)"]');
+             if (select) select.value = '';
+         }
+
+         // 图形控制
+         function fitToScreen() {
+             const graphArea = document.querySelector('.graph-area');
+             const familyTree = document.querySelector('.family-tree');
+             
+             // 计算合适的缩放比例
+             const containerWidth = graphArea.clientWidth;
+             const containerHeight = graphArea.clientHeight;
+             const treeWidth = familyTree.scrollWidth;
+             const treeHeight = familyTree.scrollHeight;
+             
+             const scaleX = containerWidth / treeWidth;
+             const scaleY = containerHeight / treeHeight;
+             const scale = Math.min(scaleX, scaleY, 1) * 0.9; // 留一些边距
+             
+             state.zoomLevel = Math.round(scale * 100);
+             applyZoom();
+             
+             console.log('适应屏幕');
+         }
+
+         function centerGraph() {
+             const graphContainer = document.querySelector('.graph-container');
+             const familyTree = document.querySelector('.family-tree');
+             
+             // 居中显示
+             graphContainer.scrollTo({
+                 left: (familyTree.scrollWidth - graphContainer.clientWidth) / 2,
+                 top: (familyTree.scrollHeight - graphContainer.clientHeight) / 2,
+                 behavior: 'smooth'
+             });
+             
+             console.log('居中显示');
+         }
+
+         function fullscreen() {
+             const graphArea = document.querySelector('.graph-area');
+             
+             if (!document.fullscreenElement) {
+                 graphArea.requestFullscreen().catch(err => {
+                     console.log('全屏失败:', err);
+                 });
+             } else {
+                 document.exitFullscreen();
+             }
+         }
+
+         // 成员详情
+         function showMemberDetail(memberId) {
+             const memberData = {
+                 1: { name: '张德明', dates: '1368-1435', generation: '第1代', desc: '张氏家族始祖，明朝洪武年间自山西洪洞迁至此地' },
+                 2: { name: '李氏', dates: '1372-1438', generation: '第1代', desc: '张德明之妻，贤良淑德，相夫教子' },
+                 3: { name: '张文华', dates: '1395-1468', generation: '第2代', desc: '张德明长子，承继家业' },
+                 4: { name: '张文武', dates: '1398-1471', generation: '第2代', desc: '张德明次子，武艺高强' },
+                 5: { name: '王氏', dates: '1400-1475', generation: '第2代', desc: '张文武之妻' },
+                 6: { name: '张志远', dates: '1420-1489', generation: '第3代', desc: '张文华之子，志向远大' },
+                 7: { name: '张志高', dates: '1422-1491', generation: '第3代', desc: '张文华次子，品德高尚' },
+                 8: { name: '赵氏', dates: '1425-1494', generation: '第3代', desc: '张志远之妻' }
+             };
+             
+             const member = memberData[memberId];
+             if (member) {
+                 alert(`成员详情\n\n姓名：${member.name}\n生卒：${member.dates}\n世代：${member.generation}\n简介：${member.desc}`);
+             }
+         }
+
+         // 头部功能
+         function goBack() {
+             if (confirm('确定要返回族谱列表吗？未保存的更改将丢失。')) {
+                 console.log('返回族谱列表');
+                 // 这里应该跳转到族谱列表页面
+             }
+         }
+
+         function shareFamily() {
+             const shareUrl = `${window.location.origin}/family/zhang-family`;
+             
+             if (navigator.share) {
+                 navigator.share({
+                     title: '张氏家族族谱',
+                     text: '查看我们的家族族谱',
+                     url: shareUrl
+                 });
+             } else {
+                 // 复制到剪贴板
+                 navigator.clipboard.writeText(shareUrl).then(() => {
+                     alert('分享链接已复制到剪贴板！\n\n' + shareUrl);
+                 }).catch(() => {
+                     alert('分享链接：\n' + shareUrl);
+                 });
+             }
+         }
+
+         function openSettings() {
+             alert('族谱设置\n\n• 隐私设置\n• 编辑权限\n• 通知设置\n• 数据备份\n• 族谱主题\n\n功能开发中...');
+         }
+
+         function inviteMembers() {
+             const inviteCode = 'ZHANG' + Math.random().toString(36).substr(2, 6).toUpperCase();
+             alert(`邀请成员加入族谱\n\n邀请码：${inviteCode}\n\n请将此邀请码分享给家族成员，他们可以使用此码加入族谱。\n\n邀请码有效期：7天`);
+         }
+
+         function addMember() {
+             alert('添加新成员\n\n请选择添加方式：\n• 手动录入信息\n• 邀请注册用户\n• 从Excel导入\n• 扫描身份证\n\n功能开发中...');
+         }
+
+         // 响应式处理
+         function handleResize() {
+             const sidebar = document.getElementById('sidebar');
+             
+             if (window.innerWidth <= 768) {
+                 if (!state.sidebarCollapsed) {
+                     toggleSidebar();
+                 }
+             }
+         }
+
+         // 键盘快捷键
+         function handleKeyboard(event) {
+             if (event.ctrlKey || event.metaKey) {
+                 switch(event.key) {
+                     case '=':
+                     case '+':
+                         event.preventDefault();
+                         zoomIn();
+                         break;
+                     case '-':
+                         event.preventDefault();
+                         zoomOut();
+                         break;
+                     case '0':
+                         event.preventDefault();
+                         resetZoom();
+                         break;
+                     case 'f':
+                         event.preventDefault();
+                         fullscreen();
+                         break;
+                     case 's':
+                         event.preventDefault();
+                         alert('保存功能：Ctrl+S');
+                         break;
+                 }
+             }
+             
+             switch(event.key) {
+                 case 'Escape':
+                     if (document.fullscreenElement) {
+                         document.exitFullscreen();
+                     }
+                     break;
+                 case 'F11':
+                     event.preventDefault();
+                     fullscreen();
+                     break;
+             }
+         }
+
+         // 初始化
+         function init() {
+             // 设置事件监听器
+             window.addEventListener('resize', handleResize);
+             document.addEventListener('keydown', handleKeyboard);
+             
+             // 初始化状态
+             handleResize();
+             applyZoom();
+             
+             // 模拟数据加载
+             setTimeout(() => {
+                 console.log('族谱数据加载完成');
+             }, 1000);
+             
+             console.log('族谱页面初始化完成');
+         }
+
+         // 页面加载完成后初始化
+         document.addEventListener('DOMContentLoaded', init);
