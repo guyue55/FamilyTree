@@ -26,6 +26,7 @@
       "@/assets/*": ["./src/assets/*"],
       "@/composables/*": ["./src/composables/*"],
       "@/constants/*": ["./src/constants/*"],
+      "@/config/*": ["./src/config/*"],
       "@/directives/*": ["./src/directives/*"],
       "@/layouts/*": ["./src/layouts/*"],
       "@/plugins/*": ["./src/plugins/*"],

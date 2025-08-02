@@ -3,15 +3,16 @@
  *
  * 定义项目中使用的所有常量
  * 避免魔法数字和硬编码字符串
+ *
+ * @author 古月
+ * @version 1.0.0
  */
 
-// API相关常量
-export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
-  TIMEOUT: 30000,
-  RETRY_TIMES: 3,
-  RETRY_DELAY: 1000
-} as const
+// 导出系统常量
+export * from './system'
+
+// 导出关系常量
+export * from './relationships'
 
 // 路由常量
 export const ROUTES = {
@@ -54,51 +55,6 @@ export const STORAGE_KEYS = {
   UPLOAD_PROGRESS: 'familytree_upload_progress'
 } as const
 
-// 主题常量
-export const THEMES = {
-  LIGHT: 'light',
-  DARK: 'dark',
-  AUTO: 'auto'
-} as const
-
-// 语言常量
-export const LANGUAGES = {
-  ZH_CN: 'zh-CN',
-  EN_US: 'en-US',
-  ZH_TW: 'zh-TW'
-} as const
-
-// 性别常量
-export const GENDERS = {
-  MALE: 'male',
-  FEMALE: 'female',
-  UNKNOWN: 'unknown'
-} as const
-
-// 可见性常量
-export const VISIBILITY = {
-  PUBLIC: 'public',
-  FAMILY: 'family',
-  PRIVATE: 'private'
-} as const
-
-// 状态常量
-export const STATUS = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  PENDING: 'pending',
-  DELETED: 'deleted'
-} as const
-
-// 文件类型常量
-export const FILE_TYPES = {
-  IMAGE: 'image',
-  VIDEO: 'video',
-  AUDIO: 'audio',
-  DOCUMENT: 'document',
-  OTHER: 'other'
-} as const
-
 // 支持的图片格式
 export const IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'] as const
 
@@ -110,70 +66,6 @@ export const AUDIO_FORMATS = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma'] as cons
 
 // 支持的文档格式
 export const DOCUMENT_FORMATS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'] as const
-
-// 文件大小限制（字节）
-export const FILE_SIZE_LIMITS = {
-  AVATAR: 5 * 1024 * 1024, // 5MB
-  COVER: 10 * 1024 * 1024, // 10MB
-  IMAGE: 20 * 1024 * 1024, // 20MB
-  VIDEO: 100 * 1024 * 1024, // 100MB
-  AUDIO: 50 * 1024 * 1024, // 50MB
-  DOCUMENT: 20 * 1024 * 1024 // 20MB
-} as const
-
-// 分页常量
-export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 20,
-  PAGE_SIZE_OPTIONS: [10, 20, 50, 100],
-  MAX_PAGE_SIZE: 100
-} as const
-
-// 家族角色常量
-export const FAMILY_ROLES = {
-  OWNER: 'owner',
-  ADMIN: 'admin',
-  MODERATOR: 'moderator',
-  MEMBER: 'member'
-} as const
-
-// 关系类型常量
-export const RELATIONSHIP_TYPES = {
-  PARENT: 'parent',
-  CHILD: 'child',
-  SPOUSE: 'spouse',
-  SIBLING: 'sibling',
-  GRANDPARENT: 'grandparent',
-  GRANDCHILD: 'grandchild',
-  UNCLE_AUNT: 'uncle_aunt',
-  NEPHEW_NIECE: 'nephew_niece',
-  COUSIN: 'cousin',
-  IN_LAW: 'in_law',
-  OTHER: 'other'
-} as const
-
-// 婚姻状态常量
-export const MARRIAGE_STATUS = {
-  SINGLE: 'single',
-  MARRIED: 'married',
-  DIVORCED: 'divorced',
-  WIDOWED: 'widowed',
-  SEPARATED: 'separated'
-} as const
-
-// 家族树布局常量
-export const TREE_LAYOUTS = {
-  HORIZONTAL: 'horizontal',
-  VERTICAL: 'vertical',
-  RADIAL: 'radial'
-} as const
-
-// 通知类型常量
-export const NOTIFICATION_TYPES = {
-  SUCCESS: 'success',
-  WARNING: 'warning',
-  ERROR: 'error',
-  INFO: 'info'
-} as const
 
 // 邀请状态常量
 export const INVITATION_STATUS = {

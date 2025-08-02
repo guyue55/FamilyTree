@@ -5,7 +5,8 @@
  * 与后端API保持一致
  */
 
-import type { BaseEntity, Contact, GenderType, StatusType, VisibilityType } from './index'
+import type { BaseEntity, Contact, StatusType, VisibilityType } from './index'
+import { Gender } from '@/enums/user'
 
 // 用户基础信息
 export interface User extends BaseEntity {
@@ -14,7 +15,7 @@ export interface User extends BaseEntity {
   phone?: string
   avatar?: string
   nickname?: string
-  gender: GenderType
+  gender: Gender
   birthDate?: string
   bio?: string
   isVerified: boolean
@@ -74,7 +75,7 @@ export interface UserRegisterForm {
   confirmPassword: string
   phone?: string
   nickname?: string
-  gender?: GenderType
+  gender?: Gender
   agreementAccepted: boolean
   invitationCode?: string
 }
@@ -91,7 +92,7 @@ export interface UserLoginForm {
 export interface UserUpdateForm {
   nickname?: string
   avatar?: string
-  gender?: GenderType
+  gender?: Gender
   birthDate?: string
   bio?: string
   phone?: string
@@ -107,7 +108,7 @@ export interface PasswordChangeForm {
 // 用户搜索参数
 export interface UserSearchParams {
   keyword?: string
-  gender?: GenderType
+  gender?: Gender
   status?: StatusType
   isVerified?: boolean
   isPremium?: boolean

@@ -40,6 +40,7 @@ export default defineConfig({
       '@/api': fileURLToPath(new URL('./src/api', import.meta.url)),
       '@/composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
       '@/constants': fileURLToPath(new URL('./src/constants', import.meta.url)),
+      '@/config': fileURLToPath(new URL('./src/config', import.meta.url)),
       '@/plugins': fileURLToPath(new URL('./src/plugins', import.meta.url)),
       '@/directives': fileURLToPath(new URL('./src/directives', import.meta.url)),
       '@/layouts': fileURLToPath(new URL('./src/layouts', import.meta.url)),

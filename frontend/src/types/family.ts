@@ -7,6 +7,92 @@
 
 import type { BaseEntity, VisibilityType, StatusType, Address } from './index'
 
+// 性别枚举
+export enum Gender {
+  MALE = 'male',
+  FEMALE = 'female',
+  UNKNOWN = 'unknown'
+}
+
+// 家族成员
+export interface FamilyMember extends BaseEntity {
+  family_id: number
+  name: string
+  gender: Gender
+  birth_date?: string
+  death_date?: string
+  birth_place?: string
+  death_place?: string
+  occupation?: string
+  education?: string
+  bio?: string
+  avatar?: string
+  photos?: string[]
+  generation: number
+  father_id?: number
+  mother_id?: number
+  spouse_ids?: number[]
+  children_ids?: number[]
+  notes?: string
+  is_alive: boolean
+  contact?: {
+    email?: string
+    phone?: string
+    address?: Address
+  }
+  metadata?: Record<string, any>
+}
+
+// 家族成员创建表单
+export interface FamilyMemberCreateForm {
+  name: string
+  gender: Gender
+  birth_date?: string
+  death_date?: string
+  birth_place?: string
+  death_place?: string
+  occupation?: string
+  education?: string
+  bio?: string
+  avatar?: string
+  generation?: number
+  father_id?: number
+  mother_id?: number
+  spouse_ids?: number[]
+  notes?: string
+  is_alive?: boolean
+  contact?: {
+    email?: string
+    phone?: string
+    address?: Address
+  }
+}
+
+// 家族成员更新表单
+export interface FamilyMemberUpdateForm {
+  name?: string
+  gender?: Gender
+  birth_date?: string
+  death_date?: string
+  birth_place?: string
+  death_place?: string
+  occupation?: string
+  education?: string
+  bio?: string
+  avatar?: string
+  generation?: number
+  father_id?: number
+  mother_id?: number
+  spouse_ids?: number[]
+  notes?: string
+  is_alive?: boolean
+  contact?: {
+    email?: string
+    phone?: string
+    address?: Address
+  }
+}
+
 // 家族基础信息
 export interface Family extends BaseEntity {
   name: string

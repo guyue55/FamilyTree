@@ -5,6 +5,16 @@
  * 遵循TypeScript最佳实践和前端开发规范
  */
 
+// 导出所有类型定义
+export * from './api'
+export * from './user'
+export * from './family'
+export * from './components'
+export * from './graph'
+
+// 导入枚举类型
+import { MediaType } from '@/enums/familyTree'
+
 // 基础类型
 export type ID = number | string
 
@@ -39,14 +49,8 @@ export interface BaseEntity {
 // 可见性选择
 export type VisibilityType = 'public' | 'family' | 'private'
 
-// 性别类型
-export type GenderType = 'male' | 'female' | 'unknown'
-
 // 状态类型
 export type StatusType = 'active' | 'inactive' | 'pending' | 'deleted'
-
-// 文件类型
-export type FileType = 'image' | 'video' | 'audio' | 'document' | 'other'
 
 // 错误类型
 export interface ApiError {
@@ -117,7 +121,7 @@ export interface UploadFile {
   id?: ID
   name: string
   size: number
-  type: string
+  type: MediaType
   url?: string
   status: 'uploading' | 'success' | 'error'
   progress?: number
