@@ -1,0 +1,2144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>族谱页面 - 时尚版UI设计稿</title>
+    <style>
+        /* 全局重置和基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 现代时尚色彩系统 */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            
+            /* 主色调 */
+            --primary-color: #667eea;
+            --primary-light: #8b9cf7;
+            --primary-dark: #4c63d2;
+            --primary-bg: rgba(102, 126, 234, 0.08);
+
+            /* 现代中性色 */
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-light: #a0aec0;
+            --background: #ffffff;
+            --background-light: #f7fafc;
+            --background-dark: #edf2f7;
+            --surface: #ffffff;
+            --surface-hover: #f8f9fa;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+
+            /* 玻璃态效果 */
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+
+            /* 新拟态效果 */
+            --neumorphism-light: #ffffff;
+            --neumorphism-dark: #d1d9e6;
+            --neumorphism-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+
+            /* 阴影系统 */
+            --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+            /* 间距系统 */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --spacing-3xl: 4rem;
+
+            /* 圆角系统 */
+            --radius-xs: 0.125rem;
+            --radius-sm: 0.25rem;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+            --radius-xl: 0.75rem;
+            --radius-2xl: 1rem;
+            --radius-3xl: 1.5rem;
+            --radius-full: 9999px;
+
+            /* 字体系统 */
+            --font-xs: 0.75rem;
+            --font-sm: 0.875rem;
+            --font-base: 1rem;
+            --font-lg: 1.125rem;
+            --font-xl: 1.25rem;
+            --font-2xl: 1.5rem;
+            --font-3xl: 1.875rem;
+            --font-4xl: 2.25rem;
+            --font-5xl: 3rem;
+
+            /* 动画时长 */
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+            --duration-slow: 500ms;
+        }
+
+        /* 现代字体 */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            line-height: 1.6;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 页面布局 */
+        .family-tree-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .family-tree-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* 玻璃态顶部导航栏 */
+        .page-header {
+            height: 72px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: var(--font-lg);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-xl);
+            transition: all var(--duration-normal) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateX(-4px) scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .page-title {
+            font-size: var(--font-2xl);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-base);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            font-weight: 600;
+            transition: all var(--duration-normal) ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left var(--duration-slow);
+        }
+
+        .header-btn:hover::before {
+            left: 100%;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-btn.primary {
+            background: var(--success-gradient);
+            border-color: transparent;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-btn.primary:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* 现代化工具栏 */
+        .toolbar {
+            height: 80px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-xl);
+            position: relative;
+            z-index: 999;
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-2xl);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toolbar-label {
+            font-size: var(--font-xs);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .toolbar-select {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: var(--font-sm);
+            font-weight: 500;
+            cursor: pointer;
+            min-width: 160px;
+            transition: all var(--duration-normal) ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toolbar-select:hover,
+        .toolbar-select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .toolbar-select option {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .toolbar-input {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: var(--font-sm);
+            width: 280px;
+            transition: all var(--duration-normal) ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .toolbar-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            outline: none;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toolbar-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .toolbar-btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-full);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            font-size: var(--font-sm);
+            font-weight: 600;
+            transition: all var(--duration-normal) ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toolbar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left var(--duration-slow);
+        }
+
+        .toolbar-btn:hover::before {
+            left: 100%;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toolbar-btn.primary {
+            background: var(--accent-gradient);
+            border-color: transparent;
+        }
+
+        .toolbar-btn.primary:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-group {
+            display: flex;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-2xl);
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-group .toolbar-btn {
+            border: none;
+            border-radius: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-group .toolbar-btn:last-child {
+            border-right: none;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 现代化侧边栏 */
+        .sidebar {
+            width: 380px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-top: none;
+            border-bottom: none;
+            border-left: none;
+            display: flex;
+            flex-direction: column;
+            transition: all var(--duration-normal) ease;
+            position: relative;
+            z-index: 998;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            width: 40px;
+            height: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transform: translateY(-50%);
+            transition: all var(--duration-normal) ease;
+            color: white;
+            font-size: var(--font-base);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-xl);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            padding: var(--spacing-lg) var(--spacing-md);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+        }
+
+        .sidebar.collapsed .sidebar-content {
+            display: none;
+        }
+
+        /* 现代化族谱信息卡片 */
+        .family-info-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        .family-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+        }
+
+        .family-name {
+            font-size: var(--font-2xl);
+            font-weight: 800;
+            color: white;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .family-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--font-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .family-desc {
+            font-size: var(--font-base);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.7;
+        }
+
+        .family-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all var(--duration-normal) ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-value {
+            font-size: var(--font-2xl);
+            font-weight: 800;
+            color: white;
+            display: block;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: var(--spacing-sm);
+            font-size: var(--font-sm);
+            font-weight: 600;
+        }
+
+        /* 现代化筛选器 */
+        .filters-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            color: white;
+        }
+
+        .section-title {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            color: white;
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--font-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            font-size: var(--font-sm);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: var(--spacing-md);
+            font-weight: 600;
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .filter-tag {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-full);
+            font-size: var(--font-sm);
+            cursor: pointer;
+            transition: all var(--duration-normal) ease;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left var(--duration-normal);
+        }
+
+        .filter-tag:hover::before {
+            left: 100%;
+        }
+
+        .filter-tag:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-tag.active {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-tag.active:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* 现代化成员列表 */
+        .members-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-xl);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            color: white;
+        }
+
+        .members-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .add-member-btn {
+            background: var(--success-gradient);
+            border: none;
+            color: white;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            font-weight: 600;
+            transition: all var(--duration-normal) ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            box-shadow: var(--shadow-md);
+        }
+
+        .add-member-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .members-list {
+            flex: 1;
+            overflow-y: auto;
+            margin: 0 calc(-1 * var(--spacing-md));
+            padding: 0 var(--spacing-md);
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: all var(--duration-normal) ease;
+            margin-bottom: var(--spacing-md);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .member-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left var(--duration-normal);
+        }
+
+        .member-item:hover::before {
+            left: 100%;
+        }
+
+        .member-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(8px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .member-item.selected {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateX(12px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .member-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-base);
+            font-weight: 700;
+            margin-right: var(--spacing-lg);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: var(--font-base);
+            font-weight: 700;
+            color: white;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .member-details {
+            font-size: var(--font-sm);
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .member-generation {
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
+            font-weight: 600;
+        }
+
+        /* 图形区域 */
+        .graph-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+            position: relative;
+        }
+
+        .graph-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            padding: var(--spacing-2xl);
+        }
+
+        /* 现代化族谱树 */
+        .family-tree {
+            min-width: 100%;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: center center;
+            transition: transform var(--duration-normal) ease;
+        }
+
+        .generation {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-3xl);
+            position: relative;
+            width: 100%;
+        }
+
+        .generation::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+        }
+
+        .generation-label {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-gradient);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            font-size: var(--font-sm);
+            font-weight: 700;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .node-group {
+            display: flex;
+            gap: var(--spacing-2xl);
+            align-items: flex-start;
+        }
+
+        /* 现代化节点样式 */
+        .family-node {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--duration-normal) ease;
+            position: relative;
+            min-width: 180px;
+            color: white;
+            overflow: hidden;
+        }
+
+        .family-node::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left var(--duration-slow);
+        }
+
+        .family-node:hover::before {
+            left: 100%;
+        }
+
+        .family-node:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: var(--shadow-2xl);
+        }
+
+        .family-node.male {
+            border-color: rgba(79, 172, 254, 0.6);
+        }
+
+        .family-node.female {
+            border-color: rgba(240, 147, 251, 0.6);
+        }
+
+        .family-node.selected {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.7);
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: var(--shadow-2xl);
+        }
+
+        .node-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            background: var(--accent-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-xl);
+            font-weight: 800;
+            margin: 0 auto var(--spacing-md);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .node-name {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            color: white;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .node-dates {
+            font-size: var(--font-sm);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .node-generation {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* 连接线 */
+        .connection-line {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.3) 100%);
+            z-index: 1;
+        }
+
+        .connection-line.horizontal {
+            height: 2px;
+        }
+
+        .connection-line.vertical {
+            width: 2px;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: none;
+            border-left: none;
+            border-right: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--spacing-lg);
+            font-size: var(--font-sm);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: white;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 320px;
+            }
+            
+            .toolbar-input {
+                width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 0 var(--spacing-md);
+            }
+            
+            .toolbar {
+                padding: 0 var(--spacing-md);
+                flex-wrap: wrap;
+                height: auto;
+                min-height: 80px;
+            }
+            
+            .sidebar {
+                position: absolute;
+                left: -100%;
+                width: 100%;
+                z-index: 1001;
+                transition: left var(--duration-normal) ease;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .family-node {
+                min-width: 140px;
+                padding: var(--spacing-md);
+            }
+            
+            .node-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: var(--font-lg);
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp var(--duration-slow) ease-out;
+        }
+
+        .animate-slide-in-right {
+            animation: slideInRight var(--duration-slow) ease-out;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-md);
+            transition: background var(--duration-normal) ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 选择文本样式 */
+        ::selection {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        ::-moz-selection {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="family-tree-page">
+        <!-- 顶部导航栏 -->
+        <header class="page-header animate-fade-in-up">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()" title="返回">
+                    ←
+                </button>
+                <h1 class="page-title">
+                    <div class="title-icon">🏠</div>
+                    张氏家族族谱
+                </h1>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" onclick="shareFamily()" title="分享族谱">
+                    <span>📤</span>
+                    分享
+                </button>
+                <button class="header-btn" onclick="openSettings()" title="设置">
+                    <span>⚙️</span>
+                    设置
+                </button>
+                <button class="header-btn primary" onclick="inviteMembers()" title="邀请成员">
+                    <span>👥</span>
+                    邀请成员
+                </button>
+            </div>
+        </header>
+
+        <!-- 工具栏 -->
+        <div class="toolbar animate-slide-in-right">
+            <div class="toolbar-section">
+                <div class="toolbar-group">
+                    <span class="toolbar-label">世代</span>
+                    <select class="toolbar-select" onchange="filterByGeneration(this.value)">
+                        <option value="">全部世代</option>
+                        <option value="1">第1代</option>
+                        <option value="2">第2代</option>
+                        <option value="3">第3代</option>
+                        <option value="4">第4代</option>
+                        <option value="5">第5代</option>
+                    </select>
+                </div>
+                
+                <div class="toolbar-group">
+                    <span class="toolbar-label">搜索</span>
+                    <input type="text" class="toolbar-input" placeholder="搜索家族成员..." 
+                           oninput="searchMembers(this.value)">
+                </div>
+                
+                <button class="toolbar-btn" onclick="openRelationshipQuery()" title="称呼查询">
+                    <span>🔍</span>
+                    称呼查询
+                </button>
+            </div>
+            
+            <div class="toolbar-section">
+                <div class="btn-group">
+                    <button class="toolbar-btn" onclick="zoomOut()" title="缩小">-</button>
+                    <button class="toolbar-btn" onclick="resetZoom()" title="重置缩放">100%</button>
+                    <button class="toolbar-btn" onclick="zoomIn()" title="放大">+</button>
+                </div>
+                
+                <div class="toolbar-group">
+                    <span class="toolbar-label">导出</span>
+                    <select class="toolbar-select" onchange="exportFamily(this.value)">
+                        <option value="">选择格式</option>
+                        <option value="png">PNG图片</option>
+                        <option value="pdf">PDF文档</option>
+                        <option value="excel">Excel表格</option>
+                    </select>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="toolbar-btn" onclick="fitToScreen()" title="适应屏幕">📐</button>
+                    <button class="toolbar-btn" onclick="centerGraph()" title="居中显示">🎯</button>
+                    <button class="toolbar-btn" onclick="fullscreen()" title="全屏">⛶</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 侧边栏 -->
+            <aside class="sidebar animate-slide-in-right" id="sidebar">
+                <button class="sidebar-toggle" onclick="toggleSidebar()" title="收起/展开">
+                    ◀
+                </button>
+                
+                <div class="sidebar-header">
+                    <!-- 族谱信息卡片 -->
+                    <div class="family-info-card">
+                        <h2 class="family-name">
+                            <div class="family-icon">张</div>
+                            张氏家族
+                        </h2>
+                        <p class="family-desc">
+                            源远流长的张氏家族，始祖张德明于明朝洪武年间自山西洪洞迁至此地，
+                            历经数百年传承，现已繁衍至第五代。
+                        </p>
+                        <div class="family-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">156</span>
+                                <span class="stat-label">总人数</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">5</span>
+                                <span class="stat-label">世代数</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">23</span>
+                                <span class="stat-label">分支数</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-content">
+                    <!-- 筛选器 -->
+                    <div class="filters-section">
+                        <h3 class="section-title">
+                            <div class="section-icon">🔍</div>
+                            筛选器
+                        </h3>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">性别</div>
+                            <div class="filter-tags">
+                                <span class="filter-tag active" onclick="toggleFilter(this)">全部</span>
+                                <span class="filter-tag" onclick="toggleFilter(this)">男性</span>
+                                <span class="filter-tag" onclick="toggleFilter(this)">女性</span>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">在世状态</div>
+                            <div class="filter-tags">
+                                <span class="filter-tag active" onclick="toggleFilter(this)">全部</span>
+                                <span class="filter-tag" onclick="toggleFilter(this)">在世</span>
+                                <span class="filter-tag" onclick="toggleFilter(this)">已故</span>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">显示选项</div>
+                            <div class="filter-tags">
+                                <span class="filter-tag active" onclick="togglePhotos()">照片</span>
+                                <span class="filter-tag active" onclick="toggleDates()">日期</span>
+                                <span class="filter-tag active" onclick="toggleGeneration()">世代</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 成员列表 -->
+                    <div class="members-section">
+                        <div class="members-header">
+                            <h3 class="section-title">
+                                <div class="section-icon">👥</div>
+                                家族成员
+                            </h3>
+                            <button class="add-member-btn" onclick="addMember()">
+                                <span>+</span>
+                                添加成员
+                            </button>
+                        </div>
+                        
+                        <div class="members-list">
+                            <div class="member-item" onclick="selectMember(this, 1)">
+                                <div class="member-avatar">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张德明</div>
+                                    <div class="member-details">
+                                        <span>1368-1435</span>
+                                        <span class="member-generation">第1代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 2)">
+                                <div class="member-avatar">李</div>
+                                <div class="member-info">
+                                    <div class="member-name">李氏</div>
+                                    <div class="member-details">
+                                        <span>1372-1438</span>
+                                        <span class="member-generation">第1代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 3)">
+                                <div class="member-avatar">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张文华</div>
+                                    <div class="member-details">
+                                        <span>1395-1468</span>
+                                        <span class="member-generation">第2代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 4)">
+                                <div class="member-avatar">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张文武</div>
+                                    <div class="member-details">
+                                        <span>1398-1471</span>
+                                        <span class="member-generation">第2代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 5)">
+                                <div class="member-avatar">王</div>
+                                <div class="member-info">
+                                    <div class="member-name">王氏</div>
+                                    <div class="member-details">
+                                        <span>1400-1475</span>
+                                        <span class="member-generation">第2代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 6)">
+                                <div class="member-avatar">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张志远</div>
+                                    <div class="member-details">
+                                        <span>1420-1489</span>
+                                        <span class="member-generation">第3代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 7)">
+                                <div class="member-avatar">张</div>
+                                <div class="member-info">
+                                    <div class="member-name">张志高</div>
+                                    <div class="member-details">
+                                        <span>1422-1491</span>
+                                        <span class="member-generation">第3代</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="member-item" onclick="selectMember(this, 8)">
+                                <div class="member-avatar">赵</div>
+                                <div class="member-info">
+                                    <div class="member-name">赵氏</div>
+                                    <div class="member-details">
+                                        <span>1425-1494</span>
+                                        <span class="member-generation">第3代</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 图形区域 -->
+            <section class="graph-area">
+                <div class="graph-container" id="graphContainer">
+                    <div class="family-tree" id="familyTree">
+                        <!-- 第一代 -->
+                        <div class="generation" data-generation="1">
+                            <div class="generation-label">第一代 · 始祖</div>
+                            <div class="node-group">
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(1)" style="animation-delay: 0.1s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张德明</div>
+                                    <div class="node-dates">1368-1435</div>
+                                    <div class="node-generation">第1代</div>
+                                </div>
+                                
+                                <div class="family-node female animate-fade-in-up" onclick="showMemberDetail(2)" style="animation-delay: 0.2s">
+                                    <div class="node-avatar">李</div>
+                                    <div class="node-name">李氏</div>
+                                    <div class="node-dates">1372-1438</div>
+                                    <div class="node-generation">第1代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二代 -->
+                        <div class="generation" data-generation="2">
+                            <div class="generation-label">第二代 · 承继</div>
+                            <div class="node-group">
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(3)" style="animation-delay: 0.3s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张文华</div>
+                                    <div class="node-dates">1395-1468</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(4)" style="animation-delay: 0.4s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张文武</div>
+                                    <div class="node-dates">1398-1471</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                                
+                                <div class="family-node female animate-fade-in-up" onclick="showMemberDetail(5)" style="animation-delay: 0.5s">
+                                    <div class="node-avatar">王</div>
+                                    <div class="node-name">王氏</div>
+                                    <div class="node-dates">1400-1475</div>
+                                    <div class="node-generation">第2代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第三代 -->
+                        <div class="generation" data-generation="3">
+                            <div class="generation-label">第三代 · 发展</div>
+                            <div class="node-group">
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(6)" style="animation-delay: 0.6s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张志远</div>
+                                    <div class="node-dates">1420-1489</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(7)" style="animation-delay: 0.7s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张志高</div>
+                                    <div class="node-dates">1422-1491</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                                
+                                <div class="family-node female animate-fade-in-up" onclick="showMemberDetail(8)" style="animation-delay: 0.8s">
+                                    <div class="node-avatar">赵</div>
+                                    <div class="node-name">赵氏</div>
+                                    <div class="node-dates">1425-1494</div>
+                                    <div class="node-generation">第3代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第四代 -->
+                        <div class="generation" data-generation="4">
+                            <div class="generation-label">第四代 · 繁荣</div>
+                            <div class="node-group">
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(9)" style="animation-delay: 0.9s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张明德</div>
+                                    <div class="node-dates">1445-1520</div>
+                                    <div class="node-generation">第4代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(10)" style="animation-delay: 1.0s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张明智</div>
+                                    <div class="node-dates">1448-1523</div>
+                                    <div class="node-generation">第4代</div>
+                                </div>
+                                
+                                <div class="family-node female animate-fade-in-up" onclick="showMemberDetail(11)" style="animation-delay: 1.1s">
+                                    <div class="node-avatar">刘</div>
+                                    <div class="node-name">刘氏</div>
+                                    <div class="node-dates">1450-1525</div>
+                                    <div class="node-generation">第4代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(12)" style="animation-delay: 1.2s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张明礼</div>
+                                    <div class="node-dates">1452-1527</div>
+                                    <div class="node-generation">第4代</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第五代 -->
+                        <div class="generation" data-generation="5">
+                            <div class="generation-label">第五代 · 传承</div>
+                            <div class="node-group">
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(13)" style="animation-delay: 1.3s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张建国</div>
+                                    <div class="node-dates">1970-</div>
+                                    <div class="node-generation">第5代</div>
+                                </div>
+                                
+                                <div class="family-node female animate-fade-in-up" onclick="showMemberDetail(14)" style="animation-delay: 1.4s">
+                                    <div class="node-avatar">李</div>
+                                    <div class="node-name">李美华</div>
+                                    <div class="node-dates">1975-</div>
+                                    <div class="node-generation">第5代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(15)" style="animation-delay: 1.5s">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张建华</div>
+                                    <div class="node-dates">1972-</div>
+                                    <div class="node-generation">第5代</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span>当前显示:</span>
+                <span class="status-value">全部世代</span>
+            </div>
+            <div class="status-item">
+                <span>总成员数:</span>
+                <span class="status-value">156人</span>
+            </div>
+            <div class="status-item">
+                <span>缩放比例:</span>
+                <span class="status-value" id="zoomLevel">100%</span>
+            </div>
+            <div class="status-item">
+                <span>最后更新:</span>
+                <span class="status-value">2024年1月15日</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentZoom = 1;
+        let selectedMember = null;
+        let sidebarOpen = true;
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            addEventListeners();
+        });
+
+        function initializePage() {
+            // 添加页面加载动画
+            document.body.classList.add('loaded');
+            
+            // 初始化工具提示
+            initializeTooltips();
+            
+            // 设置默认状态
+            updateZoomDisplay();
+        }
+
+        function addEventListeners() {
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case '=':
+                        case '+':
+                            e.preventDefault();
+                            zoomIn();
+                            break;
+                        case '-':
+                            e.preventDefault();
+                            zoomOut();
+                            break;
+                        case '0':
+                            e.preventDefault();
+                            resetZoom();
+                            break;
+                        case 'f':
+                            e.preventDefault();
+                            fullscreen();
+                            break;
+                    }
+                }
+                
+                if (e.key === 'Escape') {
+                    closeMemberDetail();
+                }
+            });
+
+            // 鼠标滚轮缩放
+            const graphContainer = document.getElementById('graphContainer');
+            graphContainer.addEventListener('wheel', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    setZoom(currentZoom + delta);
+                }
+            });
+        }
+
+        // 导航功能
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        function shareFamily() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '张氏家族族谱',
+                    text: '查看我们的家族族谱',
+                    url: window.location.href
+                });
+            } else {
+                // 复制链接到剪贴板
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showNotification('链接已复制到剪贴板');
+                });
+            }
+        }
+
+        function openSettings() {
+            showNotification('设置功能开发中...');
+        }
+
+        function inviteMembers() {
+            showNotification('邀请功能开发中...');
+        }
+
+        // 筛选功能
+        function filterByGeneration(generation) {
+            const generations = document.querySelectorAll('.generation');
+            generations.forEach(gen => {
+                if (!generation || gen.dataset.generation === generation) {
+                    gen.style.display = 'block';
+                    gen.classList.add('animate-fade-in-up');
+                } else {
+                    gen.style.display = 'none';
+                }
+            });
+            
+            updateStatusBar('当前显示', generation ? `第${generation}代` : '全部世代');
+        }
+
+        function searchMembers(query) {
+            const members = document.querySelectorAll('.family-node');
+            const memberItems = document.querySelectorAll('.member-item');
+            
+            if (!query.trim()) {
+                // 显示所有成员
+                members.forEach(member => {
+                    member.style.display = 'block';
+                    member.classList.remove('search-highlight');
+                });
+                memberItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+                return;
+            }
+            
+            const searchTerm = query.toLowerCase();
+            
+            // 搜索族谱节点
+            members.forEach(member => {
+                const name = member.querySelector('.node-name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    member.style.display = 'block';
+                    member.classList.add('search-highlight');
+                } else {
+                    member.style.display = 'none';
+                    member.classList.remove('search-highlight');
+                }
+            });
+            
+            // 搜索侧边栏成员列表
+            memberItems.forEach(item => {
+                const name = item.querySelector('.member-name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // 缩放功能
+        function zoomIn() {
+            setZoom(currentZoom + 0.2);
+        }
+
+        function zoomOut() {
+            setZoom(currentZoom - 0.2);
+        }
+
+        function resetZoom() {
+            setZoom(1);
+        }
+
+        function setZoom(zoom) {
+            currentZoom = Math.max(0.3, Math.min(3, zoom));
+            const familyTree = document.getElementById('familyTree');
+            familyTree.style.transform = `scale(${currentZoom})`;
+            updateZoomDisplay();
+        }
+
+        function updateZoomDisplay() {
+            const zoomLevel = document.getElementById('zoomLevel');
+            if (zoomLevel) {
+                zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
+            }
+        }
+
+        function fitToScreen() {
+            const container = document.getElementById('graphContainer');
+            const tree = document.getElementById('familyTree');
+            
+            const containerRect = container.getBoundingClientRect();
+            const treeRect = tree.getBoundingClientRect();
+            
+            const scaleX = containerRect.width / treeRect.width;
+            const scaleY = containerRect.height / treeRect.height;
+            const scale = Math.min(scaleX, scaleY) * 0.9;
+            
+            setZoom(scale);
+        }
+
+        function centerGraph() {
+            const container = document.getElementById('graphContainer');
+            container.scrollTo({
+                left: (container.scrollWidth - container.clientWidth) / 2,
+                top: (container.scrollHeight - container.clientHeight) / 2,
+                behavior: 'smooth'
+            });
+        }
+
+        function fullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 导出功能
+        function exportFamily(format) {
+            if (!format) return;
+            
+            switch(format) {
+                case 'png':
+                    exportToPNG();
+                    break;
+                case 'pdf':
+                    exportToPDF();
+                    break;
+                case 'excel':
+                    exportToExcel();
+                    break;
+            }
+            
+            // 重置选择
+            event.target.value = '';
+        }
+
+        function exportToPNG() {
+            showNotification('PNG导出功能开发中...');
+        }
+
+        function exportToPDF() {
+            showNotification('PDF导出功能开发中...');
+        }
+
+        function exportToExcel() {
+            showNotification('Excel导出功能开发中...');
+        }
+
+        // 侧边栏功能
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = sidebar.querySelector('.sidebar-toggle');
+            
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.remove('collapsed');
+                toggleBtn.textContent = '◀';
+            } else {
+                sidebar.classList.add('collapsed');
+                toggleBtn.textContent = '▶';
+            }
+        }
+
+        // 筛选器功能
+        function toggleFilter(element) {
+            const filterGroup = element.parentElement;
+            const tags = filterGroup.querySelectorAll('.filter-tag');
+            
+            // 移除其他标签的active状态
+            tags.forEach(tag => tag.classList.remove('active'));
+            
+            // 激活当前标签
+            element.classList.add('active');
+            
+            // 应用筛选逻辑
+            applyFilters();
+        }
+
+        function togglePhotos() {
+            const avatars = document.querySelectorAll('.node-avatar');
+            avatars.forEach(avatar => {
+                avatar.style.display = avatar.style.display === 'none' ? 'flex' : 'none';
+            });
+        }
+
+        function toggleDates() {
+            const dates = document.querySelectorAll('.node-dates');
+            dates.forEach(date => {
+                date.style.display = date.style.display === 'none' ? 'block' : 'none';
+            });
+        }
+
+        function toggleGeneration() {
+            const generations = document.querySelectorAll('.node-generation');
+            generations.forEach(gen => {
+                gen.style.display = gen.style.display === 'none' ? 'inline-block' : 'none';
+            });
+        }
+
+        function applyFilters() {
+            // 获取当前筛选条件
+            const genderFilter = document.querySelector('.filter-group:nth-child(1) .filter-tag.active').textContent;
+            const statusFilter = document.querySelector('.filter-group:nth-child(2) .filter-tag.active').textContent;
+            
+            // 应用筛选逻辑
+            const nodes = document.querySelectorAll('.family-node');
+            nodes.forEach(node => {
+                let show = true;
+                
+                // 性别筛选
+                if (genderFilter !== '全部') {
+                    const isMale = node.classList.contains('male');
+                    const isFemale = node.classList.contains('female');
+                    
+                    if (genderFilter === '男性' && !isMale) show = false;
+                    if (genderFilter === '女性' && !isFemale) show = false;
+                }
+                
+                // 在世状态筛选
+                if (statusFilter !== '全部') {
+                    const dates = node.querySelector('.node-dates').textContent;
+                    const isAlive = !dates.includes('-') || dates.endsWith('-');
+                    
+                    if (statusFilter === '在世' && !isAlive) show = false;
+                    if (statusFilter === '已故' && isAlive) show = false;
+                }
+                
+                node.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        // 成员选择功能
+        function selectMember(element, memberId) {
+            // 移除之前的选中状态
+            document.querySelectorAll('.member-item.selected').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelectorAll('.family-node.selected').forEach(node => {
+                node.classList.remove('selected');
+            });
+            
+            // 添加新的选中状态
+            element.classList.add('selected');
+            
+            // 在族谱中高亮对应节点
+            const node = document.querySelector(`[onclick="showMemberDetail(${memberId})"]`);
+            if (node) {
+                node.classList.add('selected');
+                node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            selectedMember = memberId;
+        }
+
+        function showMemberDetail(memberId) {
+            // 显示成员详情（这里可以打开模态框或跳转到详情页）
+            showNotification(`查看成员 ${memberId} 的详细信息`);
+            
+            // 在侧边栏中选中对应成员
+            const memberItem = document.querySelector(`[onclick="selectMember(this, ${memberId})"]`);
+            if (memberItem) {
+                selectMember(memberItem, memberId);
+            }
+        }
+
+        function closeMemberDetail() {
+            // 关闭成员详情
+            document.querySelectorAll('.selected').forEach(element => {
+                element.classList.remove('selected');
+            });
+            selectedMember = null;
+        }
+
+        function addMember() {
+            showNotification('添加成员功能开发中...');
+        }
+
+        // 关系查询功能
+        function openRelationshipQuery() {
+            showNotification('称呼查询功能开发中...');
+        }
+
+        // 工具函数
+        function updateStatusBar(label, value) {
+            const statusItems = document.querySelectorAll('.status-item');
+            statusItems.forEach(item => {
+                const labelSpan = item.querySelector('span:first-child');
+                if (labelSpan && labelSpan.textContent.includes(label)) {
+                    const valueSpan = item.querySelector('.status-value');
+                    if (valueSpan) {
+                        valueSpan.textContent = value;
+                    }
+                }
+            });
+        }
+
+        function showNotification(message) {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                color: #333;
+                padding: 12px 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease-out;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        function initializeTooltips() {
+            // 为所有带有title属性的元素添加现代化工具提示
+            const elementsWithTooltips = document.querySelectorAll('[title]');
+            elementsWithTooltips.forEach(element => {
+                const title = element.getAttribute('title');
+                element.removeAttribute('title');
+                
+                element.addEventListener('mouseenter', function(e) {
+                    showTooltip(e.target, title);
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    hideTooltip();
+                });
+            });
+        }
+
+        function showTooltip(element, text) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = text;
+            tooltip.style.cssText = `
+                position: absolute;
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 12px;
+                white-space: nowrap;
+                z-index: 10001;
+                pointer-events: none;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            tooltip.style.left = rect.left + (rect.width - tooltipRect.width) / 2 + 'px';
+            tooltip.style.top = rect.top - tooltipRect.height - 8 + 'px';
+        }
+
+        function hideTooltip() {
+            const tooltip = document.querySelector('.custom-tooltip');
+            if (tooltip) {
+                tooltip.remove();
+            }
+        }
+
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+            }
+            
+            .search-highlight {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
+                border-color: rgba(255, 215, 0, 0.8) !important;
+            }
+            
+            .sidebar.collapsed {
+                width: 60px;
+            }
+            
+            .sidebar.collapsed .sidebar-content,
+            .sidebar.collapsed .sidebar-header {
+                opacity: 0;
+                pointer-events: none;
+            }
+            
+            .sidebar.collapsed .sidebar-toggle {
+                transform: rotate(180deg);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
