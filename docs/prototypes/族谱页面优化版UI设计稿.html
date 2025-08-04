@@ -645,23 +645,25 @@
         .node-group {
             display: flex;
             gap: var(--spacing-2xl);
-            align-items: flex-start;
+            align-items: flex-end;
             position: relative;
             flex-wrap: wrap;
+            min-height: 280px; /* 确保所有元素有统一的基准高度 */
         }
 
         /* 夫妻组布局 - 确保夫妻卡片紧挨着显示 */
         .couple-group {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             gap: 12px;
             position: relative;
             margin: 0 var(--spacing-lg);
             background: linear-gradient(135deg, rgba(236, 72, 153, 0.04), rgba(59, 130, 246, 0.04));
             border: 1px solid rgba(236, 72, 153, 0.15);
             border-radius: var(--radius-xl);
-            padding: 16px;
+            padding: 8px; /* 减少内边距，让外框紧贴卡片 */
             box-shadow: 0 2px 8px rgba(236, 72, 153, 0.08);
+            align-self: flex-end; /* 确保夫妻组与单身成员底部对齐 */
         }
         
         .couple-group::after {
@@ -671,27 +673,16 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: rgba(236, 72, 153, 0.6);
-            font-size: 14px;
+            font-size: 12px; /* 稍微减小爱心尺寸 */
             background: rgba(255, 255, 255, 0.9);
-            padding: 4px 6px;
+            padding: 3px 5px; /* 减少爱心的内边距 */
             border-radius: 50%;
             z-index: 10;
             box-shadow: 0 2px 6px rgba(236, 72, 153, 0.15);
             border: 1px solid rgba(236, 72, 153, 0.3);
         }
         
-        /* 单身成员组布局 */
-        .single-group {
-            display: flex;
-            gap: var(--spacing-lg);
-            align-items: center;
-            margin: 0 var(--spacing-lg);
-            background: rgba(148, 163, 184, 0.08);
-            border: 2px solid rgba(148, 163, 184, 0.2);
-            border-radius: var(--radius-xl);
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(148, 163, 184, 0.1);
-        }
+
 
         /* 族谱节点样式 */
         .family-node {
@@ -706,6 +697,7 @@
             min-width: 160px;
             color: var(--text-primary);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            align-self: flex-end; /* 确保单身成员与夫妻组底部对齐 */
         }
 
         .family-node:hover {
@@ -1277,14 +1269,12 @@
                                     </div>
                                 </div>
                                 
-                                <!-- 单身成员组 -->
-                                <div class="single-group">
-                                    <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(4)" style="animation-delay: 0.4s" data-member-id="4" data-parent="1">
-                                        <div class="node-avatar">张</div>
-                                        <div class="node-name">张文武</div>
-                                        <div class="node-dates">1398-1471</div>
-                                        <div class="node-generation">第2代</div>
-                                    </div>
+                                <!-- 单身成员 -->
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(4)" style="animation-delay: 0.4s" data-member-id="4" data-parent="1">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张文武</div>
+                                    <div class="node-dates">1398-1471</div>
+                                    <div class="node-generation">第2代</div>
                                 </div>
                             </div>
                         </div>
@@ -1310,14 +1300,12 @@
                                     </div>
                                 </div>
                                 
-                                <!-- 单身成员组 -->
-                                <div class="single-group">
-                                    <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(7)" style="animation-delay: 0.7s" data-member-id="7" data-parent="3">
-                                        <div class="node-avatar">张</div>
-                                        <div class="node-name">张志高</div>
-                                        <div class="node-dates">1422-1491</div>
-                                        <div class="node-generation">第3代</div>
-                                    </div>
+                                <!-- 单身成员 -->
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(7)" style="animation-delay: 0.7s" data-member-id="7" data-parent="3">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张志高</div>
+                                    <div class="node-dates">1422-1491</div>
+                                    <div class="node-generation">第3代</div>
                                 </div>
                             </div>
                         </div>
@@ -1343,21 +1331,19 @@
                                     </div>
                                 </div>
                                 
-                                <!-- 单身成员组 -->
-                                <div class="single-group">
-                                    <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(10)" style="animation-delay: 1.0s" data-member-id="10" data-parent="6">
-                                        <div class="node-avatar">张</div>
-                                        <div class="node-name">张明智</div>
-                                        <div class="node-dates">1448-1523</div>
-                                        <div class="node-generation">第4代</div>
-                                    </div>
-                                    
-                                    <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(12)" style="animation-delay: 1.2s" data-member-id="12" data-parent="7">
-                                        <div class="node-avatar">张</div>
-                                        <div class="node-name">张明礼</div>
-                                        <div class="node-dates">1452-1527</div>
-                                        <div class="node-generation">第4代</div>
-                                    </div>
+                                <!-- 单身成员 -->
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(10)" style="animation-delay: 1.0s" data-member-id="10" data-parent="6">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张明智</div>
+                                    <div class="node-dates">1448-1523</div>
+                                    <div class="node-generation">第4代</div>
+                                </div>
+                                
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(12)" style="animation-delay: 1.2s" data-member-id="12" data-parent="7">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张明礼</div>
+                                    <div class="node-dates">1452-1527</div>
+                                    <div class="node-generation">第4代</div>
                                 </div>
                             </div>
                         </div>
@@ -1383,14 +1369,12 @@
                                     </div>
                                 </div>
                                 
-                                <!-- 单身成员组 -->
-                                <div class="single-group">
-                                    <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(15)" style="animation-delay: 1.5s" data-member-id="15" data-parent="10">
-                                        <div class="node-avatar">张</div>
-                                        <div class="node-name">张建华</div>
-                                        <div class="node-dates">1972-</div>
-                                        <div class="node-generation">第5代</div>
-                                    </div>
+                                <!-- 单身成员 -->
+                                <div class="family-node male animate-fade-in-up" onclick="showMemberDetail(15)" style="animation-delay: 1.5s" data-member-id="15" data-parent="10">
+                                    <div class="node-avatar">张</div>
+                                    <div class="node-name">张建华</div>
+                                    <div class="node-dates">1972-</div>
+                                    <div class="node-generation">第5代</div>
                                 </div>
                             </div>
                         </div>
