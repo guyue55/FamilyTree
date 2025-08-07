@@ -1,297 +1,228 @@
-/**
- * Pinia状态管理 - 族谱状态
- *
- * @author 古月
- * @version 1.0.0
- */
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { cacheStorage } from '@/utils/storage'
-import { FamilyTreeVisibility, FamilyTreeStatus, TreeLayoutType } from '@/enums'
-import type { Family, FamilyMembership } from '@/types/family'
+import type { FamilyMember, Family } from '@/types/family'
 
-/**
- * 族谱状态管理
- */
+export interface FilterOptions {
+  gender: 'all' | 'male' | 'female'
+  status: 'all' | 'alive' | 'deceased'
+  generation: number | undefined
+  searchQuery: string
+}
+
 export const useFamilyStore = defineStore('family', () => {
   // 状态
   const currentFamily = ref<Family | null>(null)
-  const familyList = ref<Family[]>([])
-  const recentFamilies = ref<Family[]>([])
-  const familyMembers = ref<FamilyMembership[]>([])
-  const familyTree = ref<any[]>([])
-  const selectedMember = ref<FamilyMembership | null>(null)
-  const treeLayout = ref<TreeLayoutType>(TreeLayoutType.HORIZONTAL)
-  const isLoading = ref(false)
-  const searchKeyword = ref('')
+  const familyMembers = ref<FamilyMember[]>([])
+  const selectedMember = ref<FamilyMember | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  
+  // 界面状态
+  const sidebarCollapsed = ref(false)
+  const relationshipsVisible = ref(false)
+  const zoomLevel = ref(1)
+  const showPhotos = ref(true)
+  const showDates = ref(true)
+  const showGeneration = ref(true)
+  
+  // 筛选器状态
+  const filters = ref<FilterOptions>({
+    gender: 'all',
+    status: 'all',
+    generation: undefined,
+    searchQuery: ''
+  })
 
   // 计算属性
-  const hasCurrentFamily = computed(() => !!currentFamily.value)
-  const currentFamilyId = computed(() => currentFamily.value?.id)
-  const currentFamilyName = computed(() => currentFamily.value?.name || '')
-  const isCurrentFamilyOwner = computed(() => {
-    // 这里需要结合用户状态来判断
-    return currentFamily.value?.creatorId === 1 // 需要从用户store获取实际用户ID
+  const members = computed(() => familyMembers.value)
+  
+  const filteredMembers = computed(() => {
+    let result = familyMembers.value
+    
+    // 性别筛选
+    if (filters.value.gender !== 'all') {
+      result = result.filter(member => member.gender === filters.value.gender)
+    }
+    
+    // 状态筛选
+    if (filters.value.status !== 'all') {
+      if (filters.value.status === 'alive') {
+        result = result.filter(member => !member.deathDate)
+      } else {
+        result = result.filter(member => member.deathDate)
+      }
+    }
+    
+    // 世代筛选
+    if (filters.value.generation !== undefined) {
+      result = result.filter(member => member.generation === filters.value.generation)
+    }
+    
+    // 搜索筛选
+    if (filters.value.searchQuery) {
+      const query = filters.value.searchQuery.toLowerCase()
+      result = result.filter(member => 
+        member.name.toLowerCase().includes(query)
+      )
+    }
+    
+    return result
   })
-  const activeMembersCount = computed(
-    () =>
-      familyMembers.value.filter((member: FamilyMembership) => member.status === 'active').length
-  )
-  const publicFamilies = computed(() =>
-    familyList.value.filter((family: Family) => family.visibility === 'public')
-  )
-  const privateFamilies = computed(() =>
-    familyList.value.filter((family: Family) => family.visibility === 'private')
-  )
+  
+  const membersByGeneration = computed(() => {
+    const generations: Record<number, FamilyMember[]> = {}
+    filteredMembers.value.forEach(member => {
+      if (!generations[member.generation]) {
+        generations[member.generation] = []
+      }
+      generations[member.generation].push(member)
+    })
+    return generations
+  })
+  
+  const familyStats = computed(() => {
+    const totalMembers = familyMembers.value.length
+    const generations = new Set(familyMembers.value.map(m => m.generation)).size
+    const branches = familyMembers.value.filter(m => m.children && m.children.length > 0).length
+    
+    return {
+      totalMembers,
+      generations,
+      branches
+    }
+  })
 
-  // 动作
-  /**
-   * 设置当前族谱
-   */
-  function setCurrentFamily(family: Family | null) {
+  // 方法
+  const setCurrentFamily = (family: Family) => {
     currentFamily.value = family
-    if (family) {
-      addToRecentFamilies(family)
-    }
   }
 
-  /**
-   * 设置族谱列表
-   */
-  function setFamilyList(families: Family[]) {
-    familyList.value = families
-  }
-
-  /**
-   * 添加族谱到列表
-   */
-  function addFamily(family: Family) {
-    familyList.value.unshift(family)
-  }
-
-  /**
-   * 更新族谱信息
-   */
-  function updateFamily(familyId: string, updates: Partial<Family>) {
-    // 更新列表中的族谱
-    const index = familyList.value.findIndex(f => f.id === familyId)
-    if (index !== -1) {
-      familyList.value[index] = { ...familyList.value[index], ...updates }
-    }
-
-    // 更新当前族谱
-    if (currentFamily.value?.id === familyId) {
-      currentFamily.value = { ...currentFamily.value, ...updates }
-    }
-
-    // 更新最近访问的族谱
-    const recentIndex = recentFamilies.value.findIndex(f => f.id === familyId)
-    if (recentIndex !== -1) {
-      recentFamilies.value[recentIndex] = { ...recentFamilies.value[recentIndex], ...updates }
-    }
-  }
-
-  /**
-   * 删除族谱
-   */
-  function removeFamily(familyId: string) {
-    familyList.value = familyList.value.filter((f: Family) => f.id !== familyId)
-    recentFamilies.value = recentFamilies.value.filter((f: Family) => f.id !== familyId)
-
-    if (currentFamily.value?.id === familyId) {
-      currentFamily.value = null
-    }
-  }
-
-  /**
-   * 设置族谱成员
-   */
-  function setFamilyMembers(members: FamilyMembership[]) {
+  const setFamilyMembers = (members: FamilyMember[]) => {
     familyMembers.value = members
   }
 
-  /**
-   * 添加族谱成员
-   */
-  function addFamilyMember(member: FamilyMembership) {
-    familyMembers.value.push(member)
-  }
-
-  /**
-   * 更新族谱成员
-   */
-  function updateFamilyMember(memberId: string, updates: Partial<FamilyMembership>) {
-    const index = familyMembers.value.findIndex((m: FamilyMembership) => m.id === memberId)
-    if (index !== -1) {
-      familyMembers.value[index] = { ...familyMembers.value[index], ...updates }
-    }
-
-    if (selectedMember.value?.id === memberId) {
-      selectedMember.value = { ...selectedMember.value, ...updates }
-    }
-  }
-
-  /**
-   * 删除族谱成员
-   */
-  function removeFamilyMember(memberId: string) {
-    familyMembers.value = familyMembers.value.filter((m: FamilyMembership) => m.id !== memberId)
-
-    if (selectedMember.value?.id === memberId) {
-      selectedMember.value = null
-    }
-  }
-
-  /**
-   * 设置族谱树数据
-   */
-  function setFamilyTree(tree: any[]) {
-    familyTree.value = tree
-  }
-
-  /**
-   * 设置选中的成员
-   */
-  function setSelectedMember(member: FamilyMembership | null) {
+  const setSelectedMember = (member: FamilyMember | null) => {
     selectedMember.value = member
   }
 
-  /**
-   * 设置树形布局
-   */
-  function setTreeLayout(layout: TreeLayoutType) {
-    treeLayout.value = layout
-    // 保存到本地存储
-    // appStorage.setTreeLayout(layout); // 需要从app store导入
-  }
-
-  /**
-   * 添加到最近访问的族谱
-   */
-  function addToRecentFamilies(family: Family) {
-    // 移除已存在的
-    recentFamilies.value = recentFamilies.value.filter((f: Family) => f.id !== family.id)
-    // 添加到开头
-    recentFamilies.value.unshift(family)
-    // 只保留最近10个
-    if (recentFamilies.value.length > 10) {
-      recentFamilies.value = recentFamilies.value.slice(0, 10)
+  const updateMember = (member: FamilyMember) => {
+    const index = familyMembers.value.findIndex(m => m.id === member.id)
+    if (index !== -1) {
+      familyMembers.value[index] = member
     }
-    // 保存到本地存储
-    cacheStorage.setRecentFamilies(recentFamilies.value)
   }
 
-  /**
-   * 设置最近访问的族谱
-   */
-  function setRecentFamilies(families: Family[]) {
-    recentFamilies.value = families
+  const deleteMember = (memberId: string) => {
+    familyMembers.value = familyMembers.value.filter(m => m.id !== memberId)
   }
 
-  /**
-   * 设置搜索关键词
-   */
-  function setSearchKeyword(keyword: string) {
-    searchKeyword.value = keyword
+  const addMember = (member: Omit<FamilyMember, 'id'>) => {
+    const newMember: FamilyMember = {
+      ...member,
+      id: Date.now().toString()
+    }
+    familyMembers.value.push(newMember)
+    return newMember
   }
 
-  /**
-   * 设置加载状态
-   */
-  function setLoading(loading: boolean) {
-    isLoading.value = loading
-  }
-
-  /**
-   * 根据ID查找族谱
-   */
-  function findFamilyById(familyId: string): Family | undefined {
-    return familyList.value.find((f: Family) => f.id === familyId)
-  }
-
-  /**
-   * 根据ID查找成员
-   */
-  function findMemberById(memberId: string): FamilyMembership | undefined {
-    return familyMembers.value.find((m: FamilyMembership) => m.id === memberId)
-  }
-
-  /**
-   * 获取成员的关系
-   */
-  function getMemberRelationships(memberId: string) {
-    // FamilyMembership 类型中没有 relationships 属性，这里需要重新设计
-    // 暂时返回空数组，后续需要从关系表中查询
+  const loadMembers = async () => {
+    // TODO: 实现从API加载成员数据
     return []
   }
-
-  /**
-   * 从本地存储恢复数据
-   */
-  function restoreData() {
-    const storedRecentFamilies = cacheStorage.getRecentFamilies<Family[]>()
-    if (storedRecentFamilies) {
-      setRecentFamilies(storedRecentFamilies)
+  
+  // 界面控制方法
+  const toggleSidebar = () => {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+  
+  const toggleRelationships = () => {
+    relationshipsVisible.value = !relationshipsVisible.value
+  }
+  
+  const setZoomLevel = (level: number) => {
+    zoomLevel.value = Math.max(0.1, Math.min(3, level))
+  }
+  
+  const zoomIn = () => {
+    setZoomLevel(zoomLevel.value + 0.1)
+  }
+  
+  const zoomOut = () => {
+    setZoomLevel(zoomLevel.value - 0.1)
+  }
+  
+  const resetZoom = () => {
+    setZoomLevel(1)
+  }
+  
+  const togglePhotos = () => {
+    showPhotos.value = !showPhotos.value
+  }
+  
+  const toggleDates = () => {
+    showDates.value = !showDates.value
+  }
+  
+  const toggleGenerationDisplay = () => {
+    showGeneration.value = !showGeneration.value
+  }
+  
+  // 筛选器方法
+  const setFilter = <K extends keyof FilterOptions>(key: K, value: FilterOptions[K]) => {
+    filters.value[key] = value
+  }
+  
+  const resetFilters = () => {
+    filters.value = {
+      gender: 'all',
+      status: 'all',
+      generation: undefined,
+      searchQuery: ''
     }
   }
-
-  /**
-   * 清空所有数据
-   */
-  function clearAll() {
-    currentFamily.value = null
-    familyList.value = []
-    recentFamilies.value = []
-    familyMembers.value = []
-    familyTree.value = []
-    selectedMember.value = null
-    searchKeyword.value = ''
-    isLoading.value = false
+  
+  const searchMembers = (query: string) => {
+    filters.value.searchQuery = query
   }
 
   return {
     // 状态
     currentFamily,
-    familyList,
-    recentFamilies,
     familyMembers,
-    familyTree,
     selectedMember,
-    treeLayout,
-    isLoading,
-    searchKeyword,
-
+    loading,
+    error,
+    sidebarCollapsed,
+    relationshipsVisible,
+    zoomLevel,
+    showPhotos,
+    showDates,
+    showGeneration,
+    filters,
     // 计算属性
-    hasCurrentFamily,
-    currentFamilyId,
-    currentFamilyName,
-    isCurrentFamilyOwner,
-    activeMembersCount,
-    publicFamilies,
-    privateFamilies,
-
-    // 动作
+    members,
+    filteredMembers,
+    membersByGeneration,
+    familyStats,
+    // 方法
     setCurrentFamily,
-    setFamilyList,
-    addFamily,
-    updateFamily,
-    removeFamily,
     setFamilyMembers,
-    addFamilyMember,
-    updateFamilyMember,
-    removeFamilyMember,
-    setFamilyTree,
     setSelectedMember,
-    setTreeLayout,
-    addToRecentFamilies,
-    setRecentFamilies,
-    setSearchKeyword,
-    setLoading,
-    findFamilyById,
-    findMemberById,
-    getMemberRelationships,
-    restoreData,
-    clearAll
+    updateMember,
+    deleteMember,
+    addMember,
+    loadMembers,
+    toggleSidebar,
+    toggleRelationships,
+    setZoomLevel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    togglePhotos,
+    toggleDates,
+    toggleGenerationDisplay,
+    setFilter,
+    resetFilters,
+    searchMembers
   }
 })
