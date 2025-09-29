@@ -126,10 +126,18 @@
           :class="{ show: props.showRelationships, hide: !props.showRelationships }"
           ref="linesSvg"
         >
-          <!-- 父子关系连线（带halo） -->
-          <g v-for="line in parentChildLines" :key="line.id">
-            <path :d="line.path" class="line-halo parent-child-halo" />
-            <path :d="line.path" class="parent-child-line" />
+          <!-- 父子关系连线分段渲染：先竖后横，横向在最上层形成跨越效果 -->
+          <!-- 先渲染竖向两段 -->
+          <g v-for="line in parentChildLines" :key="line.id + '-v'">
+            <path v-if="line.v1" :d="line.v1" class="line-halo parent-child-halo" />
+            <path v-if="line.v1" :d="line.v1" class="parent-child-line pc-vert-line" />
+            <path v-if="line.v2" :d="line.v2" class="line-halo parent-child-halo" />
+            <path v-if="line.v2" :d="line.v2" class="parent-child-line pc-vert-line" />
+          </g>
+          <!-- 最后渲染横向一段（位于最上层） -->
+          <g v-for="line in parentChildLines" :key="line.id + '-h'">
+            <path v-if="line.h" :d="line.h" class="line-halo parent-child-halo" />
+            <path v-if="line.h" :d="line.h" class="parent-child-line pc-horz-line" />
           </g>
           
           <!-- 夫妻关系连线（带halo） -->
@@ -418,7 +426,7 @@ const positionedMembers = computed(() => {
 const parentChildLines = computed(() => {
   if (!props.showRelationships || !props.members.length) return []
   
-  const lines: Array<{ id: string; path: string }> = []
+  const lines: Array<{ id: string; v1: string; h: string; v2: string }> = []
   const memberPositions = calculateMemberPositions()
   
   // 生成父子连线
@@ -438,14 +446,16 @@ const parentChildLines = computed(() => {
         // 中线高度：更规整的固定步长，避免过深或过浅
         const verticalStep = Math.min(60, Math.max(24, (endY - startY) * 0.35))
         const midY = startY + verticalStep
-        const path = `M ${startX} ${startY}
-                     L ${startX} ${midY}
-                     L ${endX} ${midY}
-                     L ${endX} ${endY}`
-        
+
+        const v1 = `M ${startX} ${startY} L ${startX} ${midY}`
+        const h = `M ${startX} ${midY} L ${endX} ${midY}`
+        const v2 = `M ${endX} ${midY} L ${endX} ${endY}`
+
         lines.push({
           id: `parent-child-${member.parentId}-${member.id}`,
-          path
+          v1,
+          h,
+          v2
         })
       }
     }
@@ -790,7 +800,7 @@ defineExpose({
 }
 
 .family-node:hover {
-  transform: translateY(-6px);
+  /* 保持位置不变，避免与连线脱离，仅增强阴影与边框 */
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
 }
 
@@ -819,7 +829,6 @@ defineExpose({
 .family-node.selected {
   background: var(--primary-bg);
   border-color: var(--primary-color);
-  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -1107,6 +1116,10 @@ defineExpose({
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* 让横向段在视觉上“跨过”竖线：略增线宽与微升不透明度 */
+.pc-horz-line { stroke-width: 3.25; opacity: 1; }
+.pc-vert-line { stroke-width: 3; opacity: 0.98; }
 
 .spouse-line {
   stroke: #ec4899;
