@@ -38,6 +38,7 @@
                   v-for="member in group.members"
                   :key="member.id"
                   class="family-node"
+                  :data-member-id="member.id"
                   :class="[
                     member.gender,
                     { 
@@ -78,6 +79,7 @@
               
               <!-- 单身成员 -->
               <div v-else class="family-node"
+                :data-member-id="group.member.id"
                 :class="[
                   group.member.gender,
                   { 
@@ -122,6 +124,7 @@
         <svg 
           class="relationship-lines"
           :class="{ show: props.showRelationships, hide: !props.showRelationships }"
+          ref="linesSvg"
         >
           <!-- 父子关系连线 -->
           <g v-for="line in parentChildLines" :key="line.id">
@@ -206,6 +209,7 @@ const emit = defineEmits<{
 
 // 响应式数据
 const graphContainer = ref<HTMLElement>()
+const linesSvg = ref<SVGSVGElement>()
 const loading = ref(false)
 const selectedMember = ref<FamilyMember | null>(null)
 const showKeyboardHelp = ref(false)
@@ -241,6 +245,63 @@ const handleMouseMove = (event: MouseEvent) => {
 
 const handleMouseUp = () => {
   isDragging.value = false
+}
+
+// 触发布局重算的计数器
+const layoutTick = ref(0)
+
+// 统一的位置计算函数（优先从DOM测量，退化到估算）
+const calculateMemberPositions = () => {
+  const memberPositions = new Map<string, { x: number; y: number; width: number; height: number }>()
+  
+  // 优先根据真实DOM节点测量（以 .graph-content / SVG 同一坐标系为基准）
+  if (graphContainer.value) {
+    const baseEl = linesSvg.value?.parentElement || graphContainer.value.querySelector('.graph-content') || graphContainer.value
+    const containerRect = (baseEl as HTMLElement).getBoundingClientRect()
+    const nodeEls = baseEl.querySelectorAll<HTMLElement>('.family-node[data-member-id]')
+    nodeEls.forEach((el) => {
+      const id = el.dataset.memberId
+      if (!id) return
+      const rect = el.getBoundingClientRect()
+      memberPositions.set(id, {
+        x: rect.left - containerRect.left,
+        y: rect.top - containerRect.top,
+        width: rect.width,
+        height: rect.height
+      })
+    })
+  }
+  
+  // 如果DOM还未渲染到位，退化到基于分组的估算，避免空白
+  if (memberPositions.size === 0) {
+    generationGroups.value.forEach((generation, genIndex) => {
+      const generationY = genIndex * 200 + 100
+      let groupX = 100
+      generation.groups.forEach(group => {
+        if (group.type === 'couple' && group.members) {
+          group.members.forEach((member, memberIndex) => {
+            memberPositions.set(member.id, {
+              x: groupX + memberIndex * 180,
+              y: generationY,
+              width: 160,
+              height: 120
+            })
+          })
+          groupX += 360
+        } else if (group.type === 'single' && group.member) {
+          memberPositions.set(group.member.id, {
+            x: groupX,
+            y: generationY,
+            width: 160,
+            height: 120
+          })
+          groupX += 180
+        }
+      })
+    })
+  }
+  
+  return memberPositions
 }
 
 // 计算属性
@@ -357,36 +418,12 @@ const positionedMembers = computed(() => {
   return positioned
 })
 
-// 计算父子关系连线
+// 计算父子关系连线（品字形：父节点垂直向下到中线，再水平到子节点垂直下）
 const parentChildLines = computed(() => {
   if (!props.showRelationships || !props.members.length) return []
   
   const lines: Array<{ id: string; path: string }> = []
-  const memberPositions = new Map<string, { x: number; y: number }>()
-  
-  // 计算每个成员的位置
-  generationGroups.value.forEach((generation, genIndex) => {
-    const generationY = genIndex * 200 + 100
-    let groupX = 100
-    
-    generation.groups.forEach(group => {
-      if (group.type === 'couple' && group.members) {
-        group.members.forEach((member, memberIndex) => {
-          memberPositions.set(member.id, {
-            x: groupX + memberIndex * 180,
-            y: generationY
-          })
-        })
-        groupX += 360
-      } else if (group.type === 'single' && group.member) {
-        memberPositions.set(group.member.id, {
-          x: groupX,
-          y: generationY
-        })
-        groupX += 180
-      }
-    })
-  })
+  const memberPositions = calculateMemberPositions()
   
   // 生成父子连线
   props.members.forEach(member => {
@@ -395,10 +432,18 @@ const parentChildLines = computed(() => {
       const childPos = memberPositions.get(member.id)
       
       if (parentPos && childPos) {
-        const path = `M ${parentPos.x + 80} ${parentPos.y + 120} 
-                     L ${parentPos.x + 80} ${parentPos.y + 150}
-                     L ${childPos.x + 80} ${childPos.y - 30}
-                     L ${childPos.x + 80} ${childPos.y}`
+        // 计算连线起点和终点
+        const startX = parentPos.x + parentPos.width / 2  // 父卡片中心
+        const startY = parentPos.y + parentPos.height     // 父卡片底部
+        const endX = childPos.x + childPos.width / 2      // 子卡片中心
+        const endY = childPos.y                           // 子卡片顶部
+        
+        // 品字形：下-横-下（bus style）
+        const midY = startY + Math.max(24, (endY - startY) * 0.4)
+        const path = `M ${startX} ${startY}
+                     L ${startX} ${midY}
+                     L ${endX} ${midY}
+                     L ${endX} ${endY}`
         
         lines.push({
           id: `parent-child-${member.parentId}-${member.id}`,
@@ -411,50 +456,38 @@ const parentChildLines = computed(() => {
   return lines
 })
 
-// 计算夫妻关系连线
+// 计算夫妻关系连线（水平直连，保持简洁）
 const spouseLines = computed(() => {
   if (!props.showRelationships || !props.members.length) return []
   
   const lines: Array<{ id: string; path: string }> = []
-  const memberPositions = new Map<string, { x: number; y: number }>()
+  const memberPositions = calculateMemberPositions()
   
-  // 计算每个成员的位置
-  generationGroups.value.forEach((generation, genIndex) => {
-    const generationY = genIndex * 200 + 100
-    let groupX = 100
-    
+  // 遍历世代组，为夫妻组添加连线
+  generationGroups.value.forEach((generation) => {
     generation.groups.forEach(group => {
-      if (group.type === 'couple' && group.members) {
-        group.members.forEach((member, memberIndex) => {
-          memberPositions.set(member.id, {
-            x: groupX + memberIndex * 180,
-            y: generationY
-          })
-        })
+      if (group.type === 'couple' && group.members && group.members.length === 2) {
+        const spouse1Pos = memberPositions.get(group.members[0].id)
+        const spouse2Pos = memberPositions.get(group.members[1].id)
         
-        // 为夫妻组添加连线
-        if (group.members.length === 2) {
-          const spouse1Pos = memberPositions.get(group.members[0].id)
-          const spouse2Pos = memberPositions.get(group.members[1].id)
+        if (spouse1Pos && spouse2Pos) {
+          // 计算夫妻连线的起点和终点
+          const startX = spouse1Pos.x + spouse1Pos.width  // 第一个配偶的右边缘
+          const startY = spouse1Pos.y + spouse1Pos.height / 2  // 第一个配偶的垂直中心
+          const endX = spouse2Pos.x  // 第二个配偶的左边缘
+          const endY = spouse2Pos.y + spouse2Pos.height / 2  // 第二个配偶的垂直中心
           
-          if (spouse1Pos && spouse2Pos) {
-            const path = `M ${spouse1Pos.x + 160} ${spouse1Pos.y + 60}
-                         L ${spouse2Pos.x} ${spouse2Pos.y + 60}`
-            
-            lines.push({
-              id: `spouse-${group.members[0].id}-${group.members[1].id}`,
-              path
-            })
-          }
+          // 创建平滑的夫妻连线，使用贝塞尔曲线
+          const midX = (startX + endX) / 2
+          const path = `M ${startX} ${startY}
+                       Q ${midX} ${startY} ${midX} ${(startY + endY) / 2}
+                       Q ${midX} ${endY} ${endX} ${endY}`
+          
+          lines.push({
+            id: `spouse-${group.members[0].id}-${group.members[1].id}`,
+            path
+          })
         }
-        
-        groupX += 360
-      } else if (group.type === 'single' && group.member) {
-        memberPositions.set(group.member.id, {
-          x: groupX,
-          y: generationY
-        })
-        groupX += 180
       }
     })
   })
@@ -597,6 +630,22 @@ onMounted(() => {
   document.addEventListener('mouseup', handleMouseUp)
   // 添加键盘事件监听器
   document.addEventListener('keydown', handleKeyDown)
+  // 监听容器尺寸与滚动，触发布局重算
+  const resizeObserver = new ResizeObserver(() => {
+    layoutTick.value++
+  })
+  if (graphContainer.value) {
+    resizeObserver.observe(graphContainer.value)
+  }
+  const mutationObserver = new MutationObserver(() => {
+    layoutTick.value++
+  })
+  if (graphContainer.value) {
+    mutationObserver.observe(graphContainer.value, { childList: true, subtree: true, attributes: true })
+    graphContainer.value.addEventListener('scroll', () => { layoutTick.value++ })
+  }
+  // 初次渲染后
+  nextTick(() => { layoutTick.value++ })
 })
 
 onUnmounted(() => {
@@ -606,6 +655,13 @@ onUnmounted(() => {
   // 移除键盘事件监听器
   document.removeEventListener('keydown', handleKeyDown)
 })
+
+// 当数据或布局tick变化时，强制依赖重新计算
+watch([() => props.members, layoutTick], async () => {
+  await nextTick()
+  // 访问一次以建立依赖关系
+  void calculateMemberPositions()
+}, { deep: true })
 
 // 暴露方法
 defineExpose({
@@ -1032,24 +1088,30 @@ defineExpose({
 
 .parent-child-line {
   stroke: #3b82f6;
-  stroke-width: 2;
+  stroke-width: 3;
   fill: none;
   stroke-dasharray: none;
   transition: all var(--transition-normal) ease;
+  filter: drop-shadow(0 1px 2px rgba(59, 130, 246, 0.3));
 }
 
 .spouse-line {
   stroke: #ec4899;
   stroke-width: 2;
   fill: none;
-  stroke-dasharray: 5,5;
+  stroke-dasharray: 8,4;
   transition: all var(--transition-normal) ease;
+  filter: drop-shadow(0 1px 2px rgba(236, 72, 153, 0.3));
 }
 
-.parent-child-line:hover,
+.parent-child-line:hover {
+  stroke-width: 4;
+  filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.5));
+}
+
 .spouse-line:hover {
   stroke-width: 3;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 2px 6px rgba(236, 72, 153, 0.5));
 }
 
 /* 响应式设计 */
