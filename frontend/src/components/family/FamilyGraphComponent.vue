@@ -126,20 +126,16 @@
           :class="{ show: props.showRelationships, hide: !props.showRelationships }"
           ref="linesSvg"
         >
-          <!-- 父子关系连线 -->
+          <!-- 父子关系连线（带halo） -->
           <g v-for="line in parentChildLines" :key="line.id">
-            <path
-              :d="line.path"
-              class="parent-child-line"
-            />
+            <path :d="line.path" class="line-halo parent-child-halo" />
+            <path :d="line.path" class="parent-child-line" />
           </g>
           
-          <!-- 夫妻关系连线 -->
+          <!-- 夫妻关系连线（带halo） -->
           <g v-for="line in spouseLines" :key="line.id">
-            <path
-              :d="line.path"
-              class="spouse-line"
-            />
+            <path :d="line.path" class="line-halo spouse-halo" />
+            <path :d="line.path" class="spouse-line" />
           </g>
         </svg>
       </div>
@@ -439,7 +435,9 @@ const parentChildLines = computed(() => {
         const endY = childPos.y                           // 子卡片顶部
         
         // 品字形：下-横-下（bus style）
-        const midY = startY + Math.max(24, (endY - startY) * 0.4)
+        // 中线高度：更规整的固定步长，避免过深或过浅
+        const verticalStep = Math.min(60, Math.max(24, (endY - startY) * 0.35))
+        const midY = startY + verticalStep
         const path = `M ${startX} ${startY}
                      L ${startX} ${midY}
                      L ${endX} ${midY}
@@ -1086,33 +1084,43 @@ defineExpose({
   opacity: 0;
 }
 
+
+/* 交错更友好的线条样式：圆角+halo */
+.line-halo {
+  stroke: #ffffff;
+  stroke-width: 6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.parent-child-halo { stroke: rgba(255,255,255,0.95); }
+.spouse-halo { stroke: rgba(255,255,255,0.9); }
+
 .parent-child-line {
   stroke: #3b82f6;
   stroke-width: 3;
   fill: none;
   stroke-dasharray: none;
   transition: all var(--transition-normal) ease;
-  filter: drop-shadow(0 1px 2px rgba(59, 130, 246, 0.3));
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .spouse-line {
   stroke: #ec4899;
-  stroke-width: 2;
+  stroke-width: 2.5;
   fill: none;
   stroke-dasharray: 8,4;
   transition: all var(--transition-normal) ease;
-  filter: drop-shadow(0 1px 2px rgba(236, 72, 153, 0.3));
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.parent-child-line:hover {
-  stroke-width: 4;
-  filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.5));
-}
+.parent-child-line:hover { stroke-width: 4; }
 
-.spouse-line:hover {
-  stroke-width: 3;
-  filter: drop-shadow(0 2px 6px rgba(236, 72, 153, 0.5));
-}
+.spouse-line:hover { stroke-width: 3.2; }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
