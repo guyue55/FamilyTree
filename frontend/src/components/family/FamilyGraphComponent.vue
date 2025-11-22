@@ -42,7 +42,7 @@
                   :class="[
                     member.gender,
                     { 
-                      selected: selectedMember?.id === member.id,
+                      selected: (selectedMember && selectedMember.id === member.id),
                       deceased: member.deathDate 
                     }
                   ]"
@@ -51,12 +51,12 @@
                 >
                   <!-- 头像 -->
                   <div class="node-avatar">
-                    <img 
-                      v-if="member.photo && showPhotos" 
-                      :src="member.photo" 
-                      :alt="member.name"
-                      class="avatar-image"
-                    >
+                  <img 
+                    v-if="member.photo && props.showPhotos" 
+                    :src="member.photo" 
+                    :alt="member.name"
+                    class="avatar-image"
+                  >
                     <div v-else class="avatar-placeholder">
                       {{ getInitial(member.name) }}
                     </div>
@@ -66,12 +66,12 @@
                   <div class="node-name">{{ member.name }}</div>
                   
                   <!-- 日期信息 -->
-                  <div v-if="showDates" class="node-dates">
+                  <div v-if="props.showDates" class="node-dates">
                     {{ formatDateRange(member.birthDate, member.deathDate) }}
                   </div>
                   
                   <!-- 世代信息 -->
-                  <div v-if="showGeneration" class="node-generation">
+                  <div v-if="props.showGeneration" class="node-generation">
                     第{{ member.generation }}代
                   </div>
                 </div>
@@ -83,7 +83,7 @@
                 :class="[
                   group.member.gender,
                   { 
-                    selected: selectedMember?.id === group.member.id,
+                    selected: (selectedMember && selectedMember.id === group.member.id),
                     deceased: group.member.deathDate 
                   }
                 ]"
@@ -93,7 +93,7 @@
                 <!-- 头像 -->
                 <div class="node-avatar">
                   <img 
-                    v-if="group.member.photo && showPhotos" 
+                    v-if="group.member.photo && props.showPhotos" 
                     :src="group.member.photo" 
                     :alt="group.member.name"
                     class="avatar-image"
@@ -107,12 +107,12 @@
                 <div class="node-name">{{ group.member.name }}</div>
                 
                 <!-- 日期信息 -->
-                <div v-if="showDates" class="node-dates">
+                <div v-if="props.showDates" class="node-dates">
                   {{ formatDateRange(group.member.birthDate, group.member.deathDate) }}
                 </div>
                 
                 <!-- 世代信息 -->
-                <div v-if="showGeneration" class="node-generation">
+                <div v-if="props.showGeneration" class="node-generation">
                   第{{ group.member.generation }}代
                 </div>
               </div>
@@ -127,23 +127,13 @@
           ref="linesSvg"
         >
           <!-- 父子关系连线分段渲染：先竖后横，横向在最上层形成跨越效果 -->
-          <!-- 先渲染竖向两段 -->
           <g v-for="line in parentChildLines" :key="line.id + '-v'">
-            <path v-if="line.v1" :d="line.v1" class="line-halo parent-child-halo" />
             <path v-if="line.v1" :d="line.v1" class="parent-child-line pc-vert-line" />
-            <path v-if="line.v2" :d="line.v2" class="line-halo parent-child-halo" />
             <path v-if="line.v2" :d="line.v2" class="parent-child-line pc-vert-line" />
           </g>
-          <!-- 最后渲染横向一段（位于最上层） -->
           <g v-for="line in parentChildLines" :key="line.id + '-h'">
-            <path v-if="line.h" :d="line.h" class="line-halo parent-child-halo" />
             <path v-if="line.h" :d="line.h" class="parent-child-line pc-horz-line" />
-          </g>
-          
-          <!-- 夫妻关系连线（带halo） -->
-          <g v-for="line in spouseLines" :key="line.id">
-            <path :d="line.path" class="line-halo spouse-halo" />
-            <path :d="line.path" class="spouse-line" />
+            <path v-if="line.hc" :d="line.hc" class="parent-child-line pc-horz-line" />
           </g>
         </svg>
       </div>
@@ -311,77 +301,73 @@ const calculateMemberPositions = () => {
 // 计算属性
 const generationGroups = computed(() => {
   if (!props.members || props.members.length === 0) return []
-  
-  // 按世代分组
+
   const membersByGeneration = new Map<number, FamilyMember[]>()
-  
   props.members.forEach(member => {
-    const generation = member.generation || 1
-    if (!membersByGeneration.has(generation)) {
-      membersByGeneration.set(generation, [])
-    }
-    membersByGeneration.get(generation)!.push(member)
+    const gen = member.generation || 1
+    if (!membersByGeneration.has(gen)) membersByGeneration.set(gen, [])
+    membersByGeneration.get(gen)!.push(member)
   })
-  
-  // 构建世代组结构
+
+  const levels = Array.from(membersByGeneration.keys()).sort((a, b) => a - b)
   const generations: Array<{
     level: number
-    groups: Array<{
-      id: string
-      type: 'couple' | 'single'
-      members?: FamilyMember[]
-      member?: FamilyMember
-    }>
+    groups: Array<{ id: string; type: 'couple' | 'single'; members?: FamilyMember[]; member?: FamilyMember }>
   }> = []
-  
-  membersByGeneration.forEach((members, level) => {
-    const groups: Array<{
-      id: string
-      type: 'couple' | 'single'
-      members?: FamilyMember[]
-      member?: FamilyMember
-    }> = []
-    
-    const processedMembers = new Set<string>()
-    
-    // 先处理夫妻组
+
+  levels.forEach(level => {
+    const members = membersByGeneration.get(level) || []
+    const processed = new Set<string>()
+    const prevGroups = generations.length > 0 ? generations[generations.length - 1].groups : []
+
+    const findPrevIndex = (parentId?: string | null): number => {
+      if (!parentId) return Number.POSITIVE_INFINITY
+      for (let i = 0; i < prevGroups.length; i++) {
+        const g = prevGroups[i]
+        if (g.type === 'couple' && g.members && g.members.find(m => m.id === parentId)) return i
+        if (g.type === 'single' && g.member && g.member.id === parentId) return i
+      }
+      return Number.POSITIVE_INFINITY
+    }
+
+    const clusters = new Map<number, Array<{ id: string; type: 'couple' | 'single'; members?: FamilyMember[]; member?: FamilyMember }>>()
+
     members.forEach(member => {
-      if (processedMembers.has(member.id)) return
-      
+      if (processed.has(member.id)) return
       if (member.spouseId) {
         const spouse = members.find(m => m.id === member.spouseId)
-        if (spouse && !processedMembers.has(spouse.id)) {
-          groups.push({
-            id: `couple-${member.id}-${spouse.id}`,
-            type: 'couple',
-            members: [member, spouse]
-          })
-          processedMembers.add(member.id)
-          processedMembers.add(spouse.id)
+        if (spouse && !processed.has(spouse.id)) {
+          const idx = Math.min(findPrevIndex(member.parentId || null), findPrevIndex(spouse.parentId || null))
+          const arr = clusters.get(idx) || []
+          arr.push({ id: `couple-${member.id}-${spouse.id}`, type: 'couple', members: [member, spouse] })
+          clusters.set(idx, arr)
+          processed.add(member.id)
+          processed.add(spouse.id)
         }
       }
     })
-    
-    // 再处理单身成员
+
     members.forEach(member => {
-      if (!processedMembers.has(member.id)) {
-        groups.push({
-          id: `single-${member.id}`,
-          type: 'single',
-          member
-        })
-        processedMembers.add(member.id)
+      if (!processed.has(member.id)) {
+        const idx = findPrevIndex(member.parentId || null)
+        const arr = clusters.get(idx) || []
+        arr.push({ id: `single-${member.id}`, type: 'single', member })
+        clusters.set(idx, arr)
+        processed.add(member.id)
       }
     })
-    
-    generations.push({
-      level,
-      groups
+
+    const orderedKeys = Array.from(clusters.keys()).sort((a, b) => a - b)
+    const groups: Array<{ id: string; type: 'couple' | 'single'; members?: FamilyMember[]; member?: FamilyMember }> = []
+    orderedKeys.forEach(k => {
+      const arr = clusters.get(k) || []
+      arr.forEach(g => groups.push(g))
     })
+
+    generations.push({ level, groups })
   })
-  
-  // 按世代排序
-  return generations.sort((a, b) => a.level - b.level)
+
+  return generations
 })
 
 // 常量定义
@@ -425,83 +411,89 @@ const positionedMembers = computed(() => {
 // 计算父子关系连线（品字形：父节点垂直向下到中线，再水平到子节点垂直下）
 const parentChildLines = computed(() => {
   if (!props.showRelationships || !props.members.length) return []
-  
-  const lines: Array<{ id: string; v1: string; h: string; v2: string }> = []
+
+  const lines: Array<{ id: string; v1?: string; h?: string; v2?: string; hc?: string }> = []
   const memberPositions = calculateMemberPositions()
-  
-  // 生成父子连线
-  props.members.forEach(member => {
-    if (member.parentId) {
-      const parentPos = memberPositions.get(member.parentId)
-      const childPos = memberPositions.get(member.id)
-      
-      if (parentPos && childPos) {
-        // 计算连线起点和终点
-        const startX = parentPos.x + parentPos.width / 2  // 父卡片中心
-        const startY = parentPos.y + parentPos.height     // 父卡片底部
-        const endX = childPos.x + childPos.width / 2      // 子卡片中心
-        const endY = childPos.y                           // 子卡片顶部
-        
-        // 品字形：下-横-下（bus style）
-        // 中线高度：更规整的固定步长，避免过深或过浅
-        const verticalStep = Math.min(60, Math.max(24, (endY - startY) * 0.35))
-        const midY = startY + verticalStep
+  const byId = new Map<string, FamilyMember>()
+  props.members.forEach(m => byId.set(m.id, m))
 
-        const v1 = `M ${startX} ${startY} L ${startX} ${midY}`
-        const h = `M ${startX} ${midY} L ${endX} ${midY}`
-        const v2 = `M ${endX} ${midY} L ${endX} ${endY}`
-
-        lines.push({
-          id: `parent-child-${member.parentId}-${member.id}`,
-          v1,
-          h,
-          v2
-        })
-      }
-    }
-  })
-  
-  return lines
-})
-
-// 计算夫妻关系连线（水平直连，保持简洁）
-const spouseLines = computed(() => {
-  if (!props.showRelationships || !props.members.length) return []
-  
-  const lines: Array<{ id: string; path: string }> = []
-  const memberPositions = calculateMemberPositions()
-  
-  // 遍历世代组，为夫妻组添加连线
-  generationGroups.value.forEach((generation) => {
-    generation.groups.forEach(group => {
-      if (group.type === 'couple' && group.members && group.members.length === 2) {
-        const spouse1Pos = memberPositions.get(group.members[0].id)
-        const spouse2Pos = memberPositions.get(group.members[1].id)
-        
-        if (spouse1Pos && spouse2Pos) {
-          // 计算夫妻连线的起点和终点
-          const startX = spouse1Pos.x + spouse1Pos.width  // 第一个配偶的右边缘
-          const startY = spouse1Pos.y + spouse1Pos.height / 2  // 第一个配偶的垂直中心
-          const endX = spouse2Pos.x  // 第二个配偶的左边缘
-          const endY = spouse2Pos.y + spouse2Pos.height / 2  // 第二个配偶的垂直中心
-          
-          // 创建平滑的夫妻连线，使用贝塞尔曲线
-          const midX = (startX + endX) / 2
-          const path = `M ${startX} ${startY}
-                       Q ${midX} ${startY} ${midX} ${(startY + endY) / 2}
-                       Q ${midX} ${endY} ${endX} ${endY}`
-          
-          lines.push({
-            id: `spouse-${group.members[0].id}-${group.members[1].id}`,
-            path
-          })
+  const coupleCenterByMember = new Map<string, { cx: number; cy: number }>()
+  const parentGroupIndexByMember = new Map<string, number>()
+  generationGroups.value.forEach(gen => {
+    gen.groups.forEach((g, idx) => {
+      if (g.type === 'couple' && g.members && g.members.length === 2) {
+        const p1 = memberPositions.get(g.members[0].id)
+        const p2 = memberPositions.get(g.members[1].id)
+        if (p1 && p2) {
+          const cx = (p1.x + p1.width / 2 + p2.x + p2.width / 2) / 2
+          const cy = Math.max(p1.y + p1.height, p2.y + p2.height)
+          coupleCenterByMember.set(g.members[0].id, { cx, cy })
+          coupleCenterByMember.set(g.members[1].id, { cx, cy })
         }
+        parentGroupIndexByMember.set(g.members[0].id, idx)
+        parentGroupIndexByMember.set(g.members[1].id, idx)
+      }
+      if (g.type === 'single' && g.member) {
+        parentGroupIndexByMember.set(g.member.id, idx)
       }
     })
   })
-  
+
+  const childrenByParent = new Map<string, FamilyMember[]>()
+  props.members.forEach(child => {
+    if (!child.parentId) return
+    const parent = byId.get(child.parentId)
+    if (!parent) return
+    if ((parent.generation || 1) !== (child.generation || 1) - 1) return
+    const arr = childrenByParent.get(child.parentId) || []
+    arr.push(child)
+    childrenByParent.set(child.parentId, arr)
+  })
+
+  childrenByParent.forEach((children, parentId) => {
+    const parentPos = memberPositions.get(parentId)
+    if (!parentPos) return
+    const coupleCenter = coupleCenterByMember.get(parentId)
+    const startX = coupleCenter ? coupleCenter.cx : parentPos.x + parentPos.width / 2
+    const startY = coupleCenter ? coupleCenter.cy : parentPos.y + parentPos.height
+
+    const childCenters = children
+      .map(c => ({ c, pos: memberPositions.get(c.id) }))
+      .filter(({ pos }) => !!pos) as Array<{ c: FamilyMember; pos: { x: number; y: number; width: number; height: number } }>
+    if (!childCenters.length) return
+
+    const endYs = childCenters.map(({ pos }) => pos.y)
+    const avgEndY = endYs.reduce((a, b) => a + b, 0) / endYs.length
+    const verticalStep = Math.min(80, Math.max(32, (avgEndY - startY) * 0.5))
+    const groupIdx = parentGroupIndexByMember.get(parentId) ?? 0
+    const yOffset = (groupIdx % 3 - 1) * 8
+    const midY = startY + Math.max(32, verticalStep) + yOffset
+
+    const minX = Math.min(...childCenters.map(({ pos }) => pos.x + pos.width / 2))
+    const maxX = Math.max(...childCenters.map(({ pos }) => pos.x + pos.width / 2))
+
+    const v1 = `M ${startX} ${startY} L ${startX} ${midY}`
+    const h = `M ${minX} ${midY} L ${maxX} ${midY}`
+    let hc: string | undefined
+    if (startX < minX) {
+      hc = `M ${startX} ${midY} L ${minX} ${midY}`
+    } else if (startX > maxX) {
+      hc = `M ${maxX} ${midY} L ${startX} ${midY}`
+    }
+    lines.push({ id: `parentbus-${parentId}`, v1 })
+    lines.push({ id: `bus-${parentId}`, h, hc })
+
+    childCenters.forEach(({ c, pos }) => {
+      const cx = pos.x + pos.width / 2
+      const v2 = `M ${cx} ${midY} L ${cx} ${pos.y}`
+      lines.push({ id: `stub-${parentId}-${c.id}`, v2 })
+    })
+  })
+
   return lines
 })
+
+ 
 
 // 方法
 const getInitial = (name: string) => {
@@ -652,6 +644,9 @@ onMounted(() => {
     mutationObserver.observe(graphContainer.value, { childList: true, subtree: true, attributes: true })
     graphContainer.value.addEventListener('scroll', () => { layoutTick.value++ })
   }
+  const onWindowResize = () => { layoutTick.value++ }
+  window.addEventListener('resize', onWindowResize)
+  ;(window as any)._fg_onResize = onWindowResize
   // 初次渲染后
   nextTick(() => { layoutTick.value++ })
 })
@@ -662,10 +657,15 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', handleMouseUp)
   // 移除键盘事件监听器
   document.removeEventListener('keydown', handleKeyDown)
+  const fn = (window as any)._fg_onResize
+  if (fn) {
+    window.removeEventListener('resize', fn)
+    ;(window as any)._fg_onResize = null
+  }
 })
 
 // 当数据或布局tick变化时，强制依赖重新计算
-watch([() => props.members, layoutTick], async () => {
+watch([() => props.members, layoutTick, zoomLevel, panX, panY], async () => {
   await nextTick()
   // 访问一次以建立依赖关系
   void calculateMemberPositions()
@@ -741,11 +741,12 @@ defineExpose({
 
 /* 节点组 */
 .node-group {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
   gap: var(--spacing-lg);
   justify-content: center;
-  align-items: flex-end;
+  align-items: start;
   margin: var(--spacing-md) 0;
   position: relative;
   padding: var(--spacing-xs);
@@ -753,8 +754,10 @@ defineExpose({
 
 /* 夫妻组 */
 .couple-group {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: center;
+  align-items: center;
   gap: 12px;
   position: relative;
   margin: 0 var(--spacing-lg);
@@ -763,7 +766,7 @@ defineExpose({
   border-radius: var(--radius-xl);
   padding: 8px;
   box-shadow: 0 2px 8px rgba(236, 72, 153, 0.08);
-  align-self: flex-end;
+  align-self: auto;
 }
 
 .couple-group::after {
@@ -795,7 +798,7 @@ defineExpose({
   min-width: 160px;
   color: var(--text-primary);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  align-self: flex-end;
+  align-self: auto;
   overflow: hidden;
 }
 
