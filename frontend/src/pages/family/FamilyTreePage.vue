@@ -314,6 +314,7 @@
       <div class="graph-area">
         <div class="graph-container" ref="graphContainer">
           <FamilyGraphComponent 
+            ref="graphRef"
             :members="familyStore.filteredMembers"
             :zoom-level="familyStore.zoomLevel"
             :show-relationships="familyStore.relationshipsVisible"
@@ -461,6 +462,7 @@ const familyStore = useFamilyStore()
 const showAddMemberDialog = ref(false)
 const addMemberFormRef = ref<FormInstance>()
 const graphContainer = ref<HTMLElement>()
+const graphRef = ref()
 const searchQuery = ref('')
 const selectedGeneration = ref<number | 'all'>('all')
 
@@ -557,24 +559,35 @@ const handleGenerationChange = (generation: number | 'all') => {
   familyStore.setFilter('generation', generation === 'all' ? undefined : generation)
 }
 
-const handleExport = (format: string) => {
-  // TODO: 实现导出功能
-  console.log('导出格式:', format)
+const handleExport = async (format: string) => {
+  if (format !== 'png') return
+  const el = graphContainer.value
+  if (!el) return
+  const { default: html2canvas } = await import('html2canvas')
+  const canvas = await html2canvas(el as HTMLElement, { useCORS: true, scale: 2 })
+  const link = document.createElement('a')
+  link.href = canvas.toDataURL('image/png')
+  link.download = 'family-tree.png'
+  link.click()
 }
 
 const fitToScreen = () => {
-  // TODO: 实现适应屏幕功能
-  console.log('适应屏幕')
+  graphRef.value?.fitToScreen?.()
 }
 
 const centerGraph = () => {
-  // TODO: 实现居中显示功能
-  console.log('居中显示')
+  graphRef.value?.centerGraph?.()
 }
 
 const toggleFullscreen = () => {
-  // TODO: 实现全屏功能
-  console.log('切换全屏')
+  const el = graphContainer.value
+  if (!el) return
+  const d: any = document
+  if (!d.fullscreenElement) {
+    el.requestFullscreen?.()
+  } else {
+    d.exitFullscreen?.()
+  }
 }
 
 const openSettings = () => {
@@ -650,8 +663,10 @@ onMounted(async () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   })
-  
-  // 加载示例数据
+  const loaded = await familyStore.loadMembers(familyId)
+  if (!loaded || loaded.length === 0) {
+    
+    // 加载示例数据
   const sampleMembers: FamilyMember[] = [
     // 第一代 - 始祖
     {
@@ -983,6 +998,7 @@ onMounted(async () => {
   ]
   
   familyStore.setFamilyMembers(sampleMembers)
+  }
 })
 </script>
 

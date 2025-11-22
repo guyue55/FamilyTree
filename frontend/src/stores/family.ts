@@ -125,9 +125,31 @@ export const useFamilyStore = defineStore('family', () => {
     return newMember
   }
 
-  const loadMembers = async () => {
-    // TODO: 实现从API加载成员数据
-    return []
+  const loadMembers = async (familyId?: number) => {
+    try {
+      if (!familyId && currentFamily.value) familyId = currentFamily.value.id
+      if (!familyId) return []
+      const { ensureAuthToken } = await import('@/api/auth')
+      await ensureAuthToken()
+      const { getFamilyMembersFlat } = await import('@/api/members')
+      const data = await getFamilyMembersFlat(familyId)
+      const mapped = (data || []).map((m: any) => ({
+        id: String(m.id),
+        familyId: Number(m.familyId),
+        name: String(m.name),
+        gender: m.gender === 'female' ? 'female' : 'male',
+        birthDate: m.birthDate || null,
+        deathDate: m.deathDate || null,
+        generation: Number(m.generation) || 1,
+        parentId: m.parentId ? String(m.parentId) : null,
+        spouseId: m.spouseId ? String(m.spouseId) : null,
+        children: Array.isArray(m.children) ? m.children.map((c: any) => String(c)) : []
+      })) as FamilyMember[]
+      familyMembers.value = mapped
+      return mapped
+    } catch (e) {
+      return []
+    }
   }
   
   // 界面控制方法

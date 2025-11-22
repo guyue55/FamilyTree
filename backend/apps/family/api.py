@@ -263,7 +263,7 @@ class FamilyController(StandardCRUDController):
         """注册自定义路由"""
 
         # 公开家族搜索
-        @self.router.get("/public", response=PaginatedApiResponseSchema, summary="搜索公开家族", tags=["家族搜索"])
+        @self.router.get("/public", response=PaginatedApiResponseSchema, summary="搜索公开家族", tags=["家族搜索"], auth=None)
         def search_public_families(request: HttpRequest, query: PublicFamilyQuerySchema = Query(...)):
             """搜索公开家族"""
             try:
@@ -272,8 +272,8 @@ class FamilyController(StandardCRUDController):
 
                 families, total = self.service_class.search_public_families(**filters)
 
-                # 使用Schema序列化数据，避免手动构建字典
-                data = [serialize_family(family) for family in families]
+                # 使用Schema序列化数据
+                data = [FamilyResponseSchema.from_orm(family).dict() for family in families]
 
                 return common_utils.create_paginated_response(
                     data=data,

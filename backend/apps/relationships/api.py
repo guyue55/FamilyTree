@@ -318,7 +318,7 @@ class RelationshipController(StandardCRUDController):
             try:
                 user = get_current_user(request)
                 
-                graph_data = self.service_class.get_relationship_graph(family_id, user)
+                graph_data = self.service_class.get_family_graph(family_id, user)
                 
                 return create_success_response(
                     data=graph_data,

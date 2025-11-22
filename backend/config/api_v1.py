@@ -9,6 +9,7 @@ Django Ninja API v1 配置
 from .api_config import api_config
 from .api_docs import create_api_documentation
 from apps.common.handlers import register_exception_handlers
+from apps.common.schemas import PaginatedApiResponseSchema
 
 # 全局变量存储API实例
 _api_v1_instance = None
@@ -111,6 +112,29 @@ def create_api_v1() -> NinjaAPI:
 
         # 存储实例
         _api_v1_instance = api
+        
+        # 为公开家族搜索添加无认证的直挂路由，确保匿名可访问
+        try:
+            from ninja import Query
+            from apps.family.schemas import PublicFamilyQuerySchema, FamilyResponseSchema
+            from apps.family.services import FamilyService
+            from apps.common import utils as common_utils
+
+            @api.get("/family/public", response=PaginatedApiResponseSchema, auth=None, tags=["Family"])
+            def public_search_families(request, query: PublicFamilyQuerySchema = Query(...)):
+                filters = query.dict(exclude_unset=True)
+                items, total = FamilyService.search_public_families(**filters)
+                data = [FamilyResponseSchema.from_orm(f).dict() for f in items]
+                return common_utils.create_paginated_response(
+                    data=data,
+                    total=total,
+                    page=query.page,
+                    page_size=query.page_size,
+                    message="搜索公开家族成功",
+                    request_id=common_utils.get_request_id(request)
+                )
+        except Exception:
+            pass
         return api
 
 def get_api_v1() -> NinjaAPI:

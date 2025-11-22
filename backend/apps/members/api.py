@@ -58,6 +58,8 @@ from .schemas import (
     MemberBatchCreateSchema
 )
 from .services import MemberService
+from apps.relationships.models import Relationship
+from .models import Member
 
 
 # ============================================================================
@@ -134,7 +136,6 @@ class MemberController(StandardCRUDController):
         def list_members(request: HttpRequest, query: MemberQuerySchema = Query(...)):
             """获取家族成员列表"""
             try:
-                user = get_current_user(request)
                 
                 filters = {
                     'family_id': query.family_id,
@@ -359,6 +360,66 @@ class MemberController(StandardCRUDController):
             except Exception as e:
                 logger.error(f"Get family tree error: {e}")
                 raise OperationError("获取家族树失败")
+
+        @self.router.get("/family/{family_id}/flat", response=ApiResponseSchema, summary="获取成员扁平结构", tags=["成员管理"], auth=None)
+        def get_family_members_flat(request: HttpRequest, family_id: int = Path(...)):
+            try:
+                member_qs = Member.objects.filter(family_id=family_id)
+                rel_qs = Relationship.objects.filter(family_id=family_id)
+
+                members = list(member_qs)
+                parent_map = {}
+                spouse_map = {}
+                children_map = {}
+
+                for m in members:
+                    children_map[m.id] = []
+
+                for rel in rel_qs:
+                    if rel.relationship_type == "parent":
+                        children_map.setdefault(rel.from_member_id, []).append(rel.to_member_id)
+                        parent_map.setdefault(rel.to_member_id, [])
+                        parent_map[rel.to_member_id].append(rel.from_member_id)
+                    elif rel.relationship_type == "spouse":
+                        spouse_map.setdefault(rel.from_member_id, [])
+                        spouse_map.setdefault(rel.to_member_id, [])
+                        spouse_map[rel.from_member_id].append(rel.to_member_id)
+                        spouse_map[rel.to_member_id].append(rel.from_member_id)
+
+                def pick_parent(member_id: int):
+                    ids = parent_map.get(member_id) or []
+                    if not ids:
+                        return None
+                    males = [pid for pid in ids if any(mm.id == pid and mm.gender == "male" for mm in members)]
+                    return (males[0] if males else ids[0])
+
+                def pick_spouse(member_id: int):
+                    ids = spouse_map.get(member_id) or []
+                    return ids[0] if ids else None
+
+                data = []
+                for m in members:
+                    data.append({
+                        "id": str(m.id),
+                        "familyId": m.family_id,
+                        "name": m.name,
+                        "gender": "male" if m.gender == "male" else ("female" if m.gender == "female" else "male"),
+                        "birthDate": m.birth_date.isoformat() if m.birth_date else None,
+                        "deathDate": m.death_date.isoformat() if m.death_date else None,
+                        "generation": m.generation,
+                        "parentId": str(pick_parent(m.id)) if pick_parent(m.id) is not None else None,
+                        "spouseId": str(pick_spouse(m.id)) if pick_spouse(m.id) is not None else None,
+                        "children": [str(cid) for cid in (children_map.get(m.id) or [])]
+                    })
+
+                return create_success_response(
+                    data=data,
+                    message="获取成员扁平结构成功",
+                    request_id=get_request_id(request)
+                )
+            except Exception as e:
+                logger.exception(f"Get family members flat error: {e}")
+                raise OperationError("获取成员扁平结构失败")
 
 
 # 创建控制器实例
