@@ -124,7 +124,14 @@ def create_api_v1() -> NinjaAPI:
             def public_search_families(request, query: PublicFamilyQuerySchema = Query(...)):
                 filters = query.dict(exclude_unset=True)
                 items, total = FamilyService.search_public_families(**filters)
-                data = [FamilyResponseSchema.from_orm(f).dict() for f in items]
+                from apps.members.models import Member
+                data = []
+                for f in items:
+                    obj = FamilyResponseSchema.from_orm(f).dict()
+                    qs = Member.objects.filter(family_id=f.id)
+                    obj["member_count"] = qs.count()
+                    obj["generation_count"] = (qs.order_by("-generation").values_list("generation", flat=True).first() or 0)
+                    data.append(obj)
                 return common_utils.create_paginated_response(
                     data=data,
                     total=total,
