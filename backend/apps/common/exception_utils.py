@@ -6,10 +6,7 @@ from django.conf import settings
 from django.core.cache import cache
 import traceback
 from loguru import logger
-from config.exception_config import (
-    ALERT_CONFIG,
-    EXCEPTION_CATEGORIES
-)
+from config.exception_config import ALERT_CONFIG, EXCEPTION_CATEGORIES
 
 """
 异常处理工具模块
@@ -24,14 +21,17 @@ from config.exception_config import (
 - 性能优化：最小化性能开销
 """
 
+
 class ExceptionStatistics:
     """异常统计类"""
 
     def __init__(self):
-        self.cache_prefix = 'exception_stats'
+        self.cache_prefix = "exception_stats"
         self.cache_timeout = 3600  # 1小时
 
-    def record_exception(self, exception_type: str, path: str, user_id: Optional[str] = None):
+    def record_exception(
+        self, exception_type: str, path: str, user_id: Optional[str] = None
+    ):
         """记录异常统计"""
         timestamp = datetime.now()
 
@@ -66,7 +66,7 @@ class ExceptionStatistics:
             cache.set(key, consecutive, 300)  # 5分钟超时
 
             # 检查是否需要告警
-            threshold = ALERT_CONFIG['ALERT_THRESHOLDS']['CONSECUTIVE_ERRORS']
+            threshold = ALERT_CONFIG["ALERT_THRESHOLDS"]["CONSECUTIVE_ERRORS"]
             if consecutive >= threshold:
                 self._trigger_alert(f"Consecutive errors on {path}: {consecutive}")
         except Exception as e:
@@ -74,7 +74,7 @@ class ExceptionStatistics:
 
     def _trigger_alert(self, message: str):
         """触发告警"""
-        if ALERT_CONFIG['ENABLE_EMAIL_ALERTS']:
+        if ALERT_CONFIG["ENABLE_EMAIL_ALERTS"]:
             # 这里可以集成邮件发送功能
             logger.critical(f"ALERT: {message}")
 
@@ -82,10 +82,10 @@ class ExceptionStatistics:
         """获取异常统计信息"""
         try:
             stats = {
-                'total_exceptions': cache.get(f"{self.cache_prefix}:total", 0),
-                'by_type': {},
-                'by_path': {},
-                'hourly': {}
+                "total_exceptions": cache.get(f"{self.cache_prefix}:total", 0),
+                "by_type": {},
+                "by_path": {},
+                "hourly": {},
             }
 
             # 获取按类型统计
@@ -93,12 +93,13 @@ class ExceptionStatistics:
                 for exc_type in exceptions:
                     count = cache.get(f"{self.cache_prefix}:by_type:{exc_type}", 0)
                     if count > 0:
-                        stats['by_type'][exc_type] = count
+                        stats["by_type"][exc_type] = count
 
             return stats
         except Exception as e:
             logger.warning(f"Failed to get statistics: {e}")
             return {}
+
 
 class SensitiveDataFilter:
     """敏感数据过滤器"""
@@ -113,19 +114,41 @@ class SensitiveDataFilter:
         """
         self.enabled = enabled
         self.replacement = replacement
-        
+
         # 敏感字段名列表
         self.sensitive_fields = {
-            'password', 'passwd', 'pwd', 'secret', 'token', 'key', 'api_key',
-            'access_token', 'refresh_token', 'auth_token', 'authorization',
-            'credit_card', 'card_number', 'cvv', 'ssn', 'social_security',
-            'phone', 'email', 'address', 'id_card', 'passport'
+            "password",
+            "passwd",
+            "pwd",
+            "secret",
+            "token",
+            "key",
+            "api_key",
+            "access_token",
+            "refresh_token",
+            "auth_token",
+            "authorization",
+            "credit_card",
+            "card_number",
+            "cvv",
+            "ssn",
+            "social_security",
+            "phone",
+            "email",
+            "address",
+            "id_card",
+            "passport",
         }
-        
+
         # 敏感HTTP头列表
         self.sensitive_headers = {
-            'authorization', 'x-api-key', 'x-auth-token', 'cookie',
-            'set-cookie', 'x-csrf-token', 'x-access-token'
+            "authorization",
+            "x-api-key",
+            "x-auth-token",
+            "cookie",
+            "set-cookie",
+            "x-csrf-token",
+            "x-access-token",
         }
 
     def filter_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -184,11 +207,12 @@ class SensitiveDataFilter:
         """检查HTTP头是否敏感"""
         return header_name.lower() in self.sensitive_headers
 
+
 def retry_on_exception(
     max_retries: int = 3,
     delay: float = 1.0,
     backoff: float = 2.0,
-    exceptions: tuple = (Exception,)
+    exceptions: tuple = (Exception,),
 ):
     """
     异常重试装饰器
@@ -199,6 +223,7 @@ def retry_on_exception(
         backoff: 退避倍数
         exceptions: 需要重试的异常类型
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -228,13 +253,15 @@ def retry_on_exception(
             raise last_exception
 
         return wrapper
+
     return decorator
+
 
 def safe_execute(
     func: Callable,
     default_return: Any = None,
     log_exceptions: bool = True,
-    exception_types: tuple = (Exception,)
+    exception_types: tuple = (Exception,),
 ) -> Any:
     """
     安全执行函数，捕获异常并返回默认值
@@ -255,10 +282,9 @@ def safe_execute(
             logger.exception(f"Safe execution failed for {func.__name__}: {e}")
         return default_return
 
+
 def exception_context(
-    operation_name: str,
-    log_level: str = 'ERROR',
-    reraise: bool = True
+    operation_name: str, log_level: str = "ERROR", reraise: bool = True
 ):
     """
     异常上下文管理器装饰器
@@ -268,6 +294,7 @@ def exception_context(
         log_level: 日志级别
         reraise: 是否重新抛出异常
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -279,31 +306,33 @@ def exception_context(
             except Exception as e:
                 # 根据日志级别记录异常
                 log_message = f"Operation failed: {operation_name} - {str(e)}"
-                
-                if log_level.upper() == 'DEBUG':
+
+                if log_level.upper() == "DEBUG":
                     logger.debug(log_message)
-                elif log_level.upper() == 'INFO':
+                elif log_level.upper() == "INFO":
                     logger.info(log_message)
-                elif log_level.upper() == 'WARNING':
+                elif log_level.upper() == "WARNING":
                     logger.warning(log_message)
-                elif log_level.upper() == 'ERROR':
+                elif log_level.upper() == "ERROR":
                     logger.error(log_message)
-                elif log_level.upper() == 'CRITICAL':
+                elif log_level.upper() == "CRITICAL":
                     logger.critical(log_message)
                 else:
                     logger.error(log_message)
-                
+
                 # 记录异常统计
                 exception_stats.record_exception(
-                    exception_type=type(e).__name__,
-                    path=operation_name
+                    exception_type=type(e).__name__, path=operation_name
                 )
-                
+
                 if reraise:
                     raise
                 return None
+
         return wrapper
+
     return decorator
+
 
 def get_exception_info(exception: Exception) -> Dict[str, Any]:
     """
@@ -316,13 +345,14 @@ def get_exception_info(exception: Exception) -> Dict[str, Any]:
         异常信息字典
     """
     return {
-        'type': type(exception).__name__,
-        'message': str(exception),
-        'module': getattr(exception, '__module__', 'unknown'),
-        'traceback': traceback.format_exc() if settings.DEBUG else None,
-        'timestamp': datetime.now().isoformat(),
-        'args': getattr(exception, 'args', []),
+        "type": type(exception).__name__,
+        "message": str(exception),
+        "module": getattr(exception, "__module__", "unknown"),
+        "traceback": traceback.format_exc() if settings.DEBUG else None,
+        "timestamp": datetime.now().isoformat(),
+        "args": getattr(exception, "args", []),
     }
+
 
 def categorize_exception(exception: Exception) -> str:
     """
@@ -340,13 +370,14 @@ def categorize_exception(exception: Exception) -> str:
         if exception_type in exception_types:
             return category
 
-    return 'UNKNOWN'
+    return "UNKNOWN"
+
 
 def format_exception_for_logging(
     exception: Exception,
     request_data: Optional[Dict[str, Any]] = None,
     user_id: Optional[str] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     格式化异常信息用于日志记录
@@ -363,17 +394,18 @@ def format_exception_for_logging(
     filter_tool = SensitiveDataFilter()
 
     log_data = {
-        'exception_info': get_exception_info(exception),
-        'category': categorize_exception(exception),
-        'user_id': user_id,
-        'request_id': request_id,
-        'timestamp': datetime.now().isoformat(),
+        "exception_info": get_exception_info(exception),
+        "category": categorize_exception(exception),
+        "user_id": user_id,
+        "request_id": request_id,
+        "timestamp": datetime.now().isoformat(),
     }
 
     if request_data:
-        log_data['request_data'] = filter_tool.filter_dict(request_data)
+        log_data["request_data"] = filter_tool.filter_dict(request_data)
 
     return log_data
+
 
 # 全局异常统计实例
 exception_stats = ExceptionStatistics()

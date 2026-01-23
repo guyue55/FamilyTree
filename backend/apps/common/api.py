@@ -7,11 +7,7 @@ from ninja import Router
 from .services import BaseService
 from .exceptions import BaseApplicationException
 from .utils.logging import RequestLogger
-from .schemas import (
-    SuccessResponseSchema,
-    PaginatedApiResponseSchema, 
-    BaseQuerySchema
-)
+from .schemas import SuccessResponseSchema, PaginatedApiResponseSchema, BaseQuerySchema
 from . import utils as common_utils
 
 """
@@ -22,8 +18,9 @@ from . import utils as common_utils
 """
 
 User = get_user_model()
-ServiceType = TypeVar('ServiceType', bound=BaseService)
-ModelType = TypeVar('ModelType', bound=models.Model)
+ServiceType = TypeVar("ServiceType", bound=BaseService)
+ModelType = TypeVar("ModelType", bound=models.Model)
+
 
 class BaseAPIController(Generic[ServiceType], ABC):
     """
@@ -54,9 +51,11 @@ class BaseAPIController(Generic[ServiceType], ABC):
 
     def get_current_user(self, request: HttpRequest) -> Optional[User]:
         """获取当前用户"""
-        return getattr(request, 'user', None) if hasattr(request, 'user') else None
+        return getattr(request, "user", None) if hasattr(request, "user") else None
 
-    def handle_list(self, request: HttpRequest, query: BaseQuerySchema) -> PaginatedApiResponseSchema:
+    def handle_list(
+        self, request: HttpRequest, query: BaseQuerySchema
+    ) -> PaginatedApiResponseSchema:
         """
         处理列表请求
 
@@ -70,31 +69,35 @@ class BaseAPIController(Generic[ServiceType], ABC):
         user = self.get_current_user(request)
         service = self.get_service_class()
 
-        RequestLogger.info("处理列表请求",
-                          user_id=getattr(user, 'id', None),
-                          service_name=service.__name__,
-                          query_params=query.dict(exclude_unset=True))
+        RequestLogger.info(
+            "处理列表请求",
+            user_id=getattr(user, "id", None),
+            service_name=service.__name__,
+            query_params=query.dict(exclude_unset=True),
+        )
 
         result = service.list_objects(
             user=user,
             search=query.search,
             ordering=query.ordering,
             page=query.page,
-            page_size=query.page_size
+            page_size=query.page_size,
         )
 
-        RequestLogger.info("列表查询完成",
-                          user_id=getattr(user, 'id', None),
-                          total_count=result['total'],
-                          page=result['page'],
-                          page_size=result['page_size'])
+        RequestLogger.info(
+            "列表查询完成",
+            user_id=getattr(user, "id", None),
+            total_count=result["total"],
+            page=result["page"],
+            page_size=result["page_size"],
+        )
 
         return common_utils.create_paginated_response(
-            data=result['items'],
-            total=result['total'],
-            page=result['page'],
-            page_size=result['page_size'],
-            request_id=common_utils.get_request_id(request)
+            data=result["items"],
+            total=result["total"],
+            page=result["page"],
+            page_size=result["page_size"],
+            request_id=common_utils.get_request_id(request),
         )
 
     def handle_detail(self, request: HttpRequest, obj_id: int) -> SuccessResponseSchema:
@@ -111,25 +114,29 @@ class BaseAPIController(Generic[ServiceType], ABC):
         user = self.get_current_user(request)
         service = self.get_service_class()
 
-        RequestLogger.info("处理详情请求",
-                          user_id=getattr(user, 'id', None),
-                          service_name=service.__name__,
-                          object_id=obj_id)
+        RequestLogger.info(
+            "处理详情请求",
+            user_id=getattr(user, "id", None),
+            service_name=service.__name__,
+            object_id=obj_id,
+        )
 
         obj = service.get_by_id(obj_id, user)
         data = self.serialize_object(obj, user)
 
-        RequestLogger.info("详情查询完成",
-                          user_id=getattr(user, 'id', None),
-                          object_id=obj_id)
+        RequestLogger.info(
+            "详情查询完成", user_id=getattr(user, "id", None), object_id=obj_id
+        )
 
         return common_utils.create_success_response(
             data=data,
             message="获取成功",
-            request_id=common_utils.get_request_id(request)
+            request_id=common_utils.get_request_id(request),
         )
 
-    def handle_create(self, request: HttpRequest, data: Dict[str, Any]) -> SuccessResponseSchema:
+    def handle_create(
+        self, request: HttpRequest, data: Dict[str, Any]
+    ) -> SuccessResponseSchema:
         """
         处理创建请求
 
@@ -143,25 +150,30 @@ class BaseAPIController(Generic[ServiceType], ABC):
         user = self.get_current_user(request)
         service = self.get_service_class()
 
-        RequestLogger.info("处理创建请求",
-                          user_id=getattr(user, 'id', None),
-                          service_name=service.__name__)
+        RequestLogger.info(
+            "处理创建请求",
+            user_id=getattr(user, "id", None),
+            service_name=service.__name__,
+        )
 
         obj = service.create_object(user, data)
         response_data = self.serialize_object(obj, user)
 
-        RequestLogger.info("对象创建完成",
-                          user_id=getattr(user, 'id', None),
-                          object_id=getattr(obj, 'id', None))
+        RequestLogger.info(
+            "对象创建完成",
+            user_id=getattr(user, "id", None),
+            object_id=getattr(obj, "id", None),
+        )
 
         return common_utils.create_success_response(
             data=response_data,
             message="创建成功",
-            request_id=common_utils.get_request_id(request)
+            request_id=common_utils.get_request_id(request),
         )
 
-    def handle_update(self, request: HttpRequest, obj_id: int,
-                     data: Dict[str, Any]) -> SuccessResponseSchema:
+    def handle_update(
+        self, request: HttpRequest, obj_id: int, data: Dict[str, Any]
+    ) -> SuccessResponseSchema:
         """
         处理更新请求
 
@@ -176,22 +188,24 @@ class BaseAPIController(Generic[ServiceType], ABC):
         user = self.get_current_user(request)
         service = self.get_service_class()
 
-        RequestLogger.info("处理更新请求",
-                          user_id=getattr(user, 'id', None),
-                          service_name=service.__name__,
-                          object_id=obj_id)
+        RequestLogger.info(
+            "处理更新请求",
+            user_id=getattr(user, "id", None),
+            service_name=service.__name__,
+            object_id=obj_id,
+        )
 
         obj = service.update_object(obj_id, user, data)
         response_data = self.serialize_object(obj, user)
 
-        RequestLogger.info("对象更新完成",
-                          user_id=getattr(user, 'id', None),
-                          object_id=obj_id)
+        RequestLogger.info(
+            "对象更新完成", user_id=getattr(user, "id", None), object_id=obj_id
+        )
 
         return common_utils.create_success_response(
             data=response_data,
             message="更新成功",
-            request_id=common_utils.get_request_id(request)
+            request_id=common_utils.get_request_id(request),
         )
 
     def handle_delete(self, request: HttpRequest, obj_id: int) -> SuccessResponseSchema:
@@ -208,25 +222,29 @@ class BaseAPIController(Generic[ServiceType], ABC):
         user = self.get_current_user(request)
         service = self.get_service_class()
 
-        RequestLogger.info("处理删除请求",
-                          user_id=getattr(user, 'id', None),
-                          service_name=service.__name__,
-                          object_id=obj_id)
+        RequestLogger.info(
+            "处理删除请求",
+            user_id=getattr(user, "id", None),
+            service_name=service.__name__,
+            object_id=obj_id,
+        )
 
         service.delete_object(obj_id, user)
 
-        RequestLogger.info("对象删除完成",
-                          user_id=getattr(user, 'id', None),
-                          object_id=obj_id)
+        RequestLogger.info(
+            "对象删除完成", user_id=getattr(user, "id", None), object_id=obj_id
+        )
 
         return common_utils.create_success_response(
             data=None,
             message="删除成功",
-            request_id=common_utils.get_request_id(request)
+            request_id=common_utils.get_request_id(request),
         )
 
     @abstractmethod
-    def serialize_object(self, obj: ModelType, user: Optional[User] = None) -> Dict[str, Any]:
+    def serialize_object(
+        self, obj: ModelType, user: Optional[User] = None
+    ) -> Dict[str, Any]:
         """
         序列化对象 - 子类必须实现
 
@@ -239,6 +257,7 @@ class BaseAPIController(Generic[ServiceType], ABC):
         """
         pass
 
+
 class StandardCRUDController(BaseAPIController[ServiceType]):
     """
     标准CRUD控制器
@@ -246,32 +265,34 @@ class StandardCRUDController(BaseAPIController[ServiceType]):
     提供标准的增删改查操作。
     """
 
+
 # 装饰器
 def api_exception_handler(func):
     """API异常处理装饰器"""
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except BaseApplicationException as e:
-            RequestLogger.error(f"业务异常: {e.message}",
-                              error_code=e.error_code,
-                              details=e.details)
+            RequestLogger.error(
+                f"业务异常: {e.message}", error_code=e.error_code, details=e.details
+            )
             return common_utils.create_error_response(
-                message=e.message,
-                error_code=e.error_code,
-                details=e.details
+                message=e.message, error_code=e.error_code, details=e.details
             )
         except Exception as e:
             RequestLogger.error(f"系统异常: {str(e)}")
             return common_utils.create_error_response(
-                message="系统内部错误",
-                error_code="INTERNAL_ERROR"
+                message="系统内部错误", error_code="INTERNAL_ERROR"
             )
+
     return wrapper
+
 
 def require_authentication(func):
     """认证装饰器"""
     return wrapper
+
 
 def log_api_request(func):
     """API请求日志装饰器"""

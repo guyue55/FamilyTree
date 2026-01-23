@@ -14,13 +14,14 @@ import math
 from .constants import PaginationDefaults
 from django.db.models import Q
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 def create_success_response(
     data: Any = None,
     message: str = "success",
     code: int = 200,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     创建成功响应
@@ -44,19 +45,20 @@ def create_success_response(
         }
     """
     return {
-        'code': code,
-        'message': message,
-        'data': data,
-        'timestamp': datetime.now().isoformat() + 'Z',
-        'request_id': request_id
+        "code": code,
+        "message": message,
+        "data": data,
+        "timestamp": datetime.now().isoformat() + "Z",
+        "request_id": request_id,
     }
+
 
 def create_error_response(
     code: int,
     message: str,
     data: Any = None,
     errors: Optional[List[Dict[str, Any]]] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     创建错误响应
@@ -87,18 +89,19 @@ def create_error_response(
         }
     """
     return {
-        'code': code,
-        'message': message,
-        'data': data,
-        'errors': errors,
-        'timestamp': datetime.now().isoformat() + 'Z',
-        'request_id': request_id
+        "code": code,
+        "message": message,
+        "data": data,
+        "errors": errors,
+        "timestamp": datetime.now().isoformat() + "Z",
+        "request_id": request_id,
     }
+
 
 def paginate_queryset(
     queryset: QuerySet,
     page: int = PaginationDefaults.DEFAULT_PAGE,
-    page_size: int = PaginationDefaults.DEFAULT_PAGE_SIZE
+    page_size: int = PaginationDefaults.DEFAULT_PAGE_SIZE,
 ) -> Dict[str, Any]:
     """
     对QuerySet进行分页
@@ -115,7 +118,7 @@ def paginate_queryset(
     page = max(1, page)
     page_size = max(
         PaginationDefaults.MIN_PAGE_SIZE,
-        min(PaginationDefaults.MAX_PAGE_SIZE, page_size)
+        min(PaginationDefaults.MAX_PAGE_SIZE, page_size),
     )
 
     paginator = Paginator(queryset, page_size)
@@ -127,16 +130,17 @@ def paginate_queryset(
     page_obj = paginator.get_page(page)
 
     return {
-        'items': list(page_obj.object_list),
-        'pagination': {
-            'page': page,
-            'page_size': page_size,
-            'total': paginator.count,
-            'total_pages': paginator.num_pages,
-            'has_next': page_obj.has_next(),
-            'has_prev': page_obj.has_previous()
-        }
+        "items": list(page_obj.object_list),
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": paginator.count,
+            "total_pages": paginator.num_pages,
+            "has_next": page_obj.has_next(),
+            "has_prev": page_obj.has_previous(),
+        },
     }
+
 
 def create_paginated_response(
     data: Any = None,
@@ -146,7 +150,7 @@ def create_paginated_response(
     queryset: Optional[QuerySet] = None,
     serializer_func: Optional[callable] = None,
     message: str = "success",
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     创建分页响应（支持多种数据源）
@@ -189,8 +193,8 @@ def create_paginated_response(
 
         # 如果提供了序列化函数，则序列化数据
         if serializer_func:
-            paginated_data['items'] = [
-                serializer_func(item) for item in paginated_data['items']
+            paginated_data["items"] = [
+                serializer_func(item) for item in paginated_data["items"]
             ]
     else:
         # 使用直接数据分页
@@ -216,24 +220,25 @@ def create_paginated_response(
             items = [serializer_func(item) for item in items]
 
         paginated_data = {
-            'items': items,
-            'pagination': {
-                'page': page,
-                'page_size': page_size,
-                'total': total,
-                'total_pages': total_pages,
-                'has_next': page < total_pages,
-                'has_prev': page > 1
-            }
+            "items": items,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
         }
 
     return create_success_response(
-        data=paginated_data,
-        message=message,
-        request_id=request_id
+        data=paginated_data, message=message, request_id=request_id
     )
 
-def apply_search_filter(queryset: QuerySet, search: str, search_fields: List[str]) -> QuerySet:
+
+def apply_search_filter(
+    queryset: QuerySet, search: str, search_fields: List[str]
+) -> QuerySet:
     """
     应用搜索过滤
 
@@ -254,7 +259,10 @@ def apply_search_filter(queryset: QuerySet, search: str, search_fields: List[str
 
     return queryset.filter(search_query)
 
-def apply_ordering(queryset: QuerySet, ordering: str, allowed_fields: List[str]) -> QuerySet:
+
+def apply_ordering(
+    queryset: QuerySet, ordering: str, allowed_fields: List[str]
+) -> QuerySet:
     """
     应用排序
 
@@ -270,7 +278,7 @@ def apply_ordering(queryset: QuerySet, ordering: str, allowed_fields: List[str])
         return queryset
 
     # 处理降序标识
-    desc = ordering.startswith('-')
+    desc = ordering.startswith("-")
     field = ordering[1:] if desc else ordering
 
     # 检查字段是否允许排序
@@ -279,11 +287,12 @@ def apply_ordering(queryset: QuerySet, ordering: str, allowed_fields: List[str])
 
     return queryset.order_by(ordering)
 
+
 def apply_date_filter(
     queryset: QuerySet,
     field_name: str,
     start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None,
 ) -> QuerySet:
     """
     应用日期范围过滤
@@ -305,6 +314,7 @@ def apply_date_filter(
 
     return queryset
 
+
 def get_request_id(request: HttpRequest) -> Optional[str]:
     """
     从请求中获取请求ID
@@ -315,12 +325,11 @@ def get_request_id(request: HttpRequest) -> Optional[str]:
     Returns:
         str: 请求ID
     """
-    return getattr(request, 'request_id', None)
+    return getattr(request, "request_id", None)
+
 
 def validate_file_upload(
-    file: Any,
-    allowed_types: List[str],
-    max_size: int
+    file: Any, allowed_types: List[str], max_size: int
 ) -> Dict[str, Any]:
     """
     验证文件上传
@@ -336,26 +345,27 @@ def validate_file_upload(
     errors = []
 
     # 检查文件类型
-    if hasattr(file, 'content_type'):
+    if hasattr(file, "content_type"):
         if file.content_type not in allowed_types:
-            errors.append({
-                'field': 'file',
-                'message': f'不支持的文件类型: {file.content_type}',
-                'code': 'invalid_file_type',
-                'value': file.content_type
-            })
+            errors.append(
+                {
+                    "field": "file",
+                    "message": f"不支持的文件类型: {file.content_type}",
+                    "code": "invalid_file_type",
+                    "value": file.content_type,
+                }
+            )
 
     # 检查文件大小
-    if hasattr(file, 'size'):
+    if hasattr(file, "size"):
         if file.size > max_size:
-            errors.append({
-                'field': 'file',
-                'message': f'文件大小超过限制: {file.size} > {max_size}',
-                'code': 'file_too_large',
-                'value': file.size
-            })
+            errors.append(
+                {
+                    "field": "file",
+                    "message": f"文件大小超过限制: {file.size} > {max_size}",
+                    "code": "file_too_large",
+                    "value": file.size,
+                }
+            )
 
-    return {
-        'is_valid': len(errors) == 0,
-        'errors': errors
-    }
+    return {"is_valid": len(errors) == 0, "errors": errors}

@@ -1,10 +1,12 @@
 from typing import Dict
+
 """
 通用常量定义
 
 定义项目中使用的所有常量，包括错误码、状态码、配置项等。
 遵循Django最佳实践和Google Python Style Guide。
 """
+
 
 class HttpStatusCode:
     """HTTP状态码常量"""
@@ -30,6 +32,7 @@ class HttpStatusCode:
     BAD_GATEWAY = 502
     SERVICE_UNAVAILABLE = 503
     GATEWAY_TIMEOUT = 504
+
 
 class ApiErrorCode:
     """API错误码定义"""
@@ -95,6 +98,7 @@ class ApiErrorCode:
     DATA_CONFLICT = "7002"
     DATA_CORRUPTED = "7003"
 
+
 class ApiErrorMessage:
     """API错误消息定义"""
 
@@ -110,7 +114,6 @@ class ApiErrorMessage:
         ApiErrorCode.FORBIDDEN: "访问被禁止",
         ApiErrorCode.DATA_NOT_FOUND: "数据不存在",
         ApiErrorCode.DATA_CONFLICT: "数据冲突",
-
         # 认证授权错误
         ApiErrorCode.AUTHENTICATION_FAILED: "身份认证失败",
         ApiErrorCode.TOKEN_INVALID: "访问令牌无效",
@@ -121,7 +124,6 @@ class ApiErrorMessage:
         ApiErrorCode.PASSWORD_INCORRECT: "密码错误",
         ApiErrorCode.ACCOUNT_DISABLED: "账户已被禁用",
         ApiErrorCode.ACCOUNT_LOCKED: "账户已被锁定",
-
         # 家族相关错误
         ApiErrorCode.FAMILY_NOT_FOUND: "家族不存在",
         ApiErrorCode.FAMILY_PERMISSION_DENIED: "无权限访问该家族",
@@ -132,27 +134,23 @@ class ApiErrorMessage:
         ApiErrorCode.FAMILY_INVITATION_EXPIRED: "家族邀请已过期",
         ApiErrorCode.FAMILY_INVITATION_ALREADY_PROCESSED: "家族邀请已处理",
         ApiErrorCode.FAMILY_LIMIT_EXCEEDED: "家族数量已达上限",
-
         # 成员相关错误
         ApiErrorCode.MEMBER_NOT_FOUND: "成员不存在",
         ApiErrorCode.MEMBER_PERMISSION_DENIED: "无权限操作该成员",
         ApiErrorCode.MEMBER_ALREADY_EXISTS: "成员已存在",
         ApiErrorCode.MEMBER_RELATIONSHIP_INVALID: "成员关系无效",
         ApiErrorCode.MEMBER_LIMIT_EXCEEDED: "成员数量已达上限",
-
         # 关系相关错误
         ApiErrorCode.RELATIONSHIP_NOT_FOUND: "关系不存在",
         ApiErrorCode.RELATIONSHIP_INVALID: "关系无效",
         ApiErrorCode.RELATIONSHIP_ALREADY_EXISTS: "关系已存在",
         ApiErrorCode.RELATIONSHIP_CIRCULAR_REFERENCE: "存在循环引用",
-
         # 媒体文件错误
         ApiErrorCode.FILE_NOT_FOUND: "文件不存在",
         ApiErrorCode.FILE_FORMAT_UNSUPPORTED: "文件格式不支持",
         ApiErrorCode.FILE_SIZE_EXCEEDED: "文件大小超出限制",
         ApiErrorCode.FILE_UPLOAD_FAILED: "文件上传失败",
         ApiErrorCode.FILE_PERMISSION_DENIED: "无权限访问文件",
-
         # 数据相关错误
         ApiErrorCode.DATA_NOT_FOUND: "数据不存在",
         ApiErrorCode.DATA_INVALID: "数据无效",
@@ -165,6 +163,7 @@ class ApiErrorMessage:
         """获取错误消息"""
         return cls.ERROR_MESSAGES.get(error_code, "未知错误")
 
+
 class PaginationDefaults:
     """分页默认配置"""
 
@@ -173,13 +172,15 @@ class PaginationDefaults:
     MAX_PAGE_SIZE = 100
     MIN_PAGE_SIZE = 1
 
+
 class CacheTimeout:
     """缓存超时时间配置（秒）"""
 
-    SHORT = 300      # 5分钟
-    MEDIUM = 1800    # 30分钟
-    LONG = 3600      # 1小时
+    SHORT = 300  # 5分钟
+    MEDIUM = 1800  # 30分钟
+    LONG = 3600  # 1小时
     VERY_LONG = 86400  # 24小时
+
 
 class RateLimitDefaults:
     """限流默认配置"""
@@ -194,6 +195,7 @@ class RateLimitDefaults:
     REGISTER_RATE_LIMIT = 5
     UPLOAD_RATE_LIMIT = 20
 
+
 class FileUploadLimits:
     """文件上传限制"""
 
@@ -203,9 +205,10 @@ class FileUploadLimits:
     MAX_DOCUMENT_SIZE = 50 * 1024 * 1024  # 50MB
 
     # 支持的文件格式
-    ALLOWED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-    ALLOWED_VIDEO_FORMATS = ['mp4', 'avi', 'mov', 'wmv']
-    ALLOWED_DOCUMENT_FORMATS = ['pdf', 'doc', 'docx', 'txt']
+    ALLOWED_IMAGE_FORMATS = ["jpg", "jpeg", "png", "gif", "webp"]
+    ALLOWED_VIDEO_FORMATS = ["mp4", "avi", "mov", "wmv"]
+    ALLOWED_DOCUMENT_FORMATS = ["pdf", "doc", "docx", "txt"]
+
 
 class BusinessLimits:
     """业务限制常量"""
@@ -225,13 +228,14 @@ class BusinessLimits:
     MAX_MEMBER_NAME_LENGTH = 50
     MAX_MEMBER_BIOGRAPHY_LENGTH = 2000
 
+
 __all__ = [
-    'HttpStatusCode',
-    'ApiErrorCode',
-    'ApiErrorMessage',
-    'PaginationDefaults',
-    'CacheTimeout',
-    'RateLimitDefaults',
-    'FileUploadLimits',
-    'BusinessLimits',
+    "HttpStatusCode",
+    "ApiErrorCode",
+    "ApiErrorMessage",
+    "PaginationDefaults",
+    "CacheTimeout",
+    "RateLimitDefaults",
+    "FileUploadLimits",
+    "BusinessLimits",
 ]

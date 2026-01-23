@@ -11,7 +11,12 @@ import time
 from config.logging_config import get_request_logger
 from contextlib import contextmanager
 from loguru import logger
-from ..middleware import get_current_request_id, get_current_user_id, get_current_endpoint
+from ..middleware import (
+    get_current_request_id,
+    get_current_user_id,
+    get_current_endpoint,
+)
+
 
 class RequestLogger:
     """
@@ -29,9 +34,7 @@ class RequestLogger:
 
         if request_id:
             return get_request_logger(
-                request_id=request_id,
-                user_id=user_id,
-                endpoint=endpoint
+                request_id=request_id, user_id=user_id, endpoint=endpoint
             )
         else:
             # 如果没有请求上下文，返回默认日志记录器
@@ -62,11 +65,12 @@ class RequestLogger:
         """记录严重错误级别日志"""
         RequestLogger.get_logger().critical(message, **kwargs)
 
+
 def log_function_call(
     level: str = "info",
     include_args: bool = False,
     include_result: bool = False,
-    exclude_args: Optional[list] = None
+    exclude_args: Optional[list] = None,
 ):
     """
     函数调用日志装饰器
@@ -77,6 +81,7 @@ def log_function_call(
         include_result: 是否包含函数返回值
         exclude_args: 要排除的参数名列表
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -84,20 +89,16 @@ def log_function_call(
             func_name = f"{func.__module__}.{func.__qualname__}"
 
             # 准备日志数据
-            log_data = {
-                'function': func_name,
-                'start_time': start_time
-            }
+            log_data = {"function": func_name, "start_time": start_time}
 
             # 包含参数信息
             if include_args:
                 exclude_list = exclude_args or []
                 filtered_kwargs = {
-                    k: v for k, v in kwargs.items()
-                    if k not in exclude_list
+                    k: v for k, v in kwargs.items() if k not in exclude_list
                 }
-                log_data['args'] = args
-                log_data['kwargs'] = filtered_kwargs
+                log_data["args"] = args
+                log_data["kwargs"] = filtered_kwargs
 
             # 记录函数开始执行
             log_method = getattr(RequestLogger, level.lower(), RequestLogger.info)
@@ -109,17 +110,17 @@ def log_function_call(
 
                 # 计算执行时间
                 duration = time.time() - start_time
-                log_data['duration'] = duration
-                log_data['status'] = 'success'
+                log_data["duration"] = duration
+                log_data["status"] = "success"
 
                 # 包含返回值
                 if include_result:
-                    log_data['result'] = result
+                    log_data["result"] = result
 
                 # 记录函数执行成功
                 log_method(
                     f"Function call completed: {func_name} - Duration: {duration:.3f}s",
-                    **log_data
+                    **log_data,
                 )
 
                 return result
@@ -127,22 +128,24 @@ def log_function_call(
             except Exception as e:
                 # 计算执行时间
                 duration = time.time() - start_time
-                log_data['duration'] = duration
-                log_data['status'] = 'error'
-                log_data['exception_type'] = type(e).__name__
-                log_data['exception_message'] = str(e)
+                log_data["duration"] = duration
+                log_data["status"] = "error"
+                log_data["exception_type"] = type(e).__name__
+                log_data["exception_message"] = str(e)
 
                 # 记录函数执行失败
                 RequestLogger.error(
                     f"Function call failed: {func_name} - {type(e).__name__}: {str(e)}",
-                    **log_data
+                    **log_data,
                 )
 
                 # 重新抛出异常
                 raise
 
         return wrapper
+
     return decorator
+
 
 def log_database_query(query_type: str = "unknown"):
     """
@@ -153,12 +156,9 @@ def log_database_query(query_type: str = "unknown"):
     """
     return decorator
 
+
 @contextmanager
-def log_operation(
-    operation_name: str,
-    level: str = "info",
-    **context_data
-):
+def log_operation(operation_name: str, level: str = "info", **context_data):
     """
     操作日志上下文管理器
 
@@ -175,7 +175,7 @@ def log_operation(
         f"Operation started: {operation_name}",
         operation=operation_name,
         start_time=start_time,
-        **context_data
+        **context_data,
     )
 
     try:
@@ -187,8 +187,8 @@ def log_operation(
             f"Operation completed: {operation_name} - Duration: {duration:.3f}s",
             operation=operation_name,
             duration=duration,
-            status='success',
-            **context_data
+            status="success",
+            **context_data,
         )
 
     except Exception as e:
@@ -198,18 +198,19 @@ def log_operation(
             f"Operation failed: {operation_name} - {type(e).__name__}: {str(e)}",
             operation=operation_name,
             duration=duration,
-            status='error',
+            status="error",
             exception_type=type(e).__name__,
             exception_message=str(e),
-            **context_data
+            **context_data,
         )
         raise
+
 
 def log_api_call(
     api_name: str,
     include_request_data: bool = False,
     include_response_data: bool = False,
-    exclude_fields: Optional[list] = None
+    exclude_fields: Optional[list] = None,
 ):
     """
     API调用日志装饰器
@@ -221,6 +222,7 @@ def log_api_call(
         exclude_fields: 要排除的字段列表
     """
     return decorator
+
 
 class AuditLogger:
     """
@@ -234,39 +236,33 @@ class AuditLogger:
         action: str,
         resource: str,
         resource_id: Optional[Union[str, int]] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         """记录用户操作"""
         log_data = {
-            'action': action,
-            'resource': resource,
-            'resource_id': resource_id,
-            'details': details or {}
+            "action": action,
+            "resource": resource,
+            "resource_id": resource_id,
+            "details": details or {},
         }
 
-        RequestLogger.info(
-            f"User action: {action} on {resource}",
-            **log_data
-        )
+        RequestLogger.info(f"User action: {action} on {resource}", **log_data)
 
     @staticmethod
     def log_security_event(
         event_type: str,
         severity: str = "warning",
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         """记录安全事件"""
         log_data = {
-            'event_type': event_type,
-            'severity': severity,
-            'details': details or {}
+            "event_type": event_type,
+            "severity": severity,
+            "details": details or {},
         }
 
         log_method = getattr(RequestLogger, severity.lower(), RequestLogger.warning)
-        log_method(
-            f"Security event: {event_type}",
-            **log_data
-        )
+        log_method(f"Security event: {event_type}", **log_data)
 
     @staticmethod
     def log_data_change(
@@ -274,21 +270,19 @@ class AuditLogger:
         operation: str,
         record_id: Optional[Union[str, int]] = None,
         old_values: Optional[Dict[str, Any]] = None,
-        new_values: Optional[Dict[str, Any]] = None
+        new_values: Optional[Dict[str, Any]] = None,
     ):
         """记录数据变更"""
         log_data = {
-            'table': table,
-            'operation': operation,
-            'record_id': record_id,
-            'old_values': old_values or {},
-            'new_values': new_values or {}
+            "table": table,
+            "operation": operation,
+            "record_id": record_id,
+            "old_values": old_values or {},
+            "new_values": new_values or {},
         }
 
-        RequestLogger.info(
-            f"Data change: {operation} on {table}",
-            **log_data
-        )
+        RequestLogger.info(f"Data change: {operation} on {table}", **log_data)
+
 
 # 便捷的全局日志记录器实例
 request_logger = RequestLogger()

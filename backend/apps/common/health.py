@@ -19,6 +19,7 @@ import sys
 
 health_router = Router()
 
+
 @health_router.get("/health", response=ApiResponseSchema, tags=["System"])
 def health_check(request: HttpRequest) -> Dict[str, Any]:
     """
@@ -31,8 +32,8 @@ def health_check(request: HttpRequest) -> Dict[str, Any]:
             "status": "healthy",
             "timestamp": int(time.time()),
             "version": "1.0.0",
-            "environment": getattr(settings, 'ENVIRONMENT', 'development'),
-            "checks": {}
+            "environment": getattr(settings, "ENVIRONMENT", "development"),
+            "checks": {},
         }
 
         # 检查数据库连接
@@ -41,12 +42,12 @@ def health_check(request: HttpRequest) -> Dict[str, Any]:
                 cursor.execute("SELECT 1")
             health_status["checks"]["database"] = {
                 "status": "healthy",
-                "message": "Database connection successful"
+                "message": "Database connection successful",
             }
         except Exception as e:
             health_status["checks"]["database"] = {
                 "status": "unhealthy",
-                "message": f"Database connection failed: {str(e)}"
+                "message": f"Database connection failed: {str(e)}",
             }
             health_status["status"] = "unhealthy"
 
@@ -58,32 +59,30 @@ def health_check(request: HttpRequest) -> Dict[str, Any]:
             if cache_value == "test":
                 health_status["checks"]["cache"] = {
                     "status": "healthy",
-                    "message": "Cache is working"
+                    "message": "Cache is working",
                 }
             else:
                 health_status["checks"]["cache"] = {
                     "status": "unhealthy",
-                    "message": "Cache test failed"
+                    "message": "Cache test failed",
                 }
                 health_status["status"] = "unhealthy"
         except Exception as e:
             health_status["checks"]["cache"] = {
                 "status": "unhealthy",
-                "message": f"Cache error: {str(e)}"
+                "message": f"Cache error: {str(e)}",
             }
             health_status["status"] = "unhealthy"
 
         return create_success_response(
-            data=health_status,
-            message="Health check completed"
+            data=health_status, message="Health check completed"
         )
 
     except Exception as e:
         return create_error_response(
-            code=500,
-            message="Health check failed",
-            data={"error": str(e)}
+            code=500, message="Health check failed", data={"error": str(e)}
         )
+
 
 @health_router.get("/ping", response=ApiResponseSchema, tags=["System"])
 def ping(request: HttpRequest) -> Dict[str, Any]:
@@ -93,12 +92,10 @@ def ping(request: HttpRequest) -> Dict[str, Any]:
     用于快速检查服务是否可用。
     """
     return create_success_response(
-        data={
-            "message": "pong",
-            "timestamp": int(time.time())
-        },
-        message="Service is available"
+        data={"message": "pong", "timestamp": int(time.time())},
+        message="Service is available",
     )
+
 
 @health_router.get("/version", response=ApiResponseSchema, tags=["System"])
 def version_info(request: HttpRequest) -> Dict[str, Any]:
@@ -112,12 +109,11 @@ def version_info(request: HttpRequest) -> Dict[str, Any]:
         "api_version": "1.0.0",
         "django_version": django.get_version(),
         "python_version": sys.version,
-        "environment": getattr(settings, 'ENVIRONMENT', 'development'),
+        "environment": getattr(settings, "ENVIRONMENT", "development"),
         "debug": settings.DEBUG,
-        "timestamp": int(time.time())
+        "timestamp": int(time.time()),
     }
 
     return create_success_response(
-        data=version_data,
-        message="Version information retrieved"
+        data=version_data, message="Version information retrieved"
     )

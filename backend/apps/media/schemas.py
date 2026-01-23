@@ -22,8 +22,10 @@ from ninja import Schema
 
 # ==================== 枚举定义 ====================
 
+
 class MediaFileType(str, Enum):
     """媒体文件类型枚举"""
+
     IMAGE = "image"
     VIDEO = "video"
     AUDIO = "audio"
@@ -33,6 +35,7 @@ class MediaFileType(str, Enum):
 
 class MediaPrivacyLevel(str, Enum):
     """媒体隐私级别枚举"""
+
     PUBLIC = "public"
     FAMILY = "family"
     PRIVATE = "private"
@@ -40,6 +43,7 @@ class MediaPrivacyLevel(str, Enum):
 
 class MediaProcessingStatus(str, Enum):
     """媒体处理状态枚举"""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -48,6 +52,7 @@ class MediaProcessingStatus(str, Enum):
 
 class MediaCategory(str, Enum):
     """媒体分类枚举"""
+
     PORTRAIT = "portrait"
     LANDSCAPE = "landscape"
     EVENT = "event"
@@ -58,6 +63,7 @@ class MediaCategory(str, Enum):
 
 class AlbumType(str, Enum):
     """相册类型枚举"""
+
     FAMILY = "family"
     EVENT = "event"
     TIMELINE = "timeline"
@@ -66,6 +72,7 @@ class AlbumType(str, Enum):
 
 class AlbumVisibility(str, Enum):
     """相册可见性枚举"""
+
     PUBLIC = "public"
     FAMILY = "family"
     PRIVATE = "private"
@@ -73,6 +80,7 @@ class AlbumVisibility(str, Enum):
 
 class CommentStatus(str, Enum):
     """评论状态枚举"""
+
     ACTIVE = "active"
     HIDDEN = "hidden"
     DELETED = "deleted"
@@ -80,6 +88,7 @@ class CommentStatus(str, Enum):
 
 class ExportFormat(str, Enum):
     """导出格式枚举"""
+
     ZIP = "zip"
     TAR = "tar"
     PDF = "pdf"
@@ -88,6 +97,7 @@ class ExportFormat(str, Enum):
 
 class ImportSource(str, Enum):
     """导入源枚举"""
+
     LOCAL = "local"
     CLOUD = "cloud"
     URL = "url"
@@ -96,6 +106,7 @@ class ImportSource(str, Enum):
 
 class JobType(str, Enum):
     """任务类型枚举"""
+
     THUMBNAIL = "thumbnail"
     COMPRESS = "compress"
     METADATA = "metadata"
@@ -104,6 +115,7 @@ class JobType(str, Enum):
 
 class JobStatus(str, Enum):
     """任务状态枚举"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -116,7 +128,7 @@ class JobStatus(str, Enum):
 
 class MediaFileBaseSchema(Schema):
     """媒体文件基础信息Schema"""
-    
+
     title: str = Field(..., min_length=1, max_length=200, description="媒体标题")
     description: Optional[str] = Field(None, max_length=1000, description="媒体描述")
     tags: Optional[str] = Field(None, max_length=200, description="标签")
@@ -125,36 +137,44 @@ class MediaFileBaseSchema(Schema):
     location: Optional[str] = Field(None, max_length=200, description="拍摄地点")
     latitude: Optional[float] = Field(None, description="纬度")
     longitude: Optional[float] = Field(None, description="经度")
-    visibility: MediaPrivacyLevel = Field(MediaPrivacyLevel.FAMILY, description="可见性")
+    visibility: MediaPrivacyLevel = Field(
+        MediaPrivacyLevel.FAMILY, description="可见性"
+    )
     is_featured: bool = Field(False, description="是否精选")
 
 
 class MediaFileCreateSchema(MediaFileBaseSchema):
     """创建媒体文件Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
-    
-    @field_validator('latitude')
+
+    @field_validator("latitude")
     @classmethod
-    def validate_latitude(cls, v: Optional[float], info: ValidationInfo) -> Optional[float]:
+    def validate_latitude(
+        cls, v: Optional[float], info: ValidationInfo
+    ) -> Optional[float]:
         """验证纬度"""
         if v is not None and not (-90 <= v <= 90):
-            raise ValueError('纬度必须在-90到90之间')
+            raise ValueError("纬度必须在-90到90之间")
         return v
-    
-    @field_validator('longitude')
+
+    @field_validator("longitude")
     @classmethod
-    def validate_longitude(cls, v: Optional[float], info: ValidationInfo) -> Optional[float]:
+    def validate_longitude(
+        cls, v: Optional[float], info: ValidationInfo
+    ) -> Optional[float]:
         """验证经度"""
         if v is not None and not (-180 <= v <= 180):
-            raise ValueError('经度必须在-180到180之间')
+            raise ValueError("经度必须在-180到180之间")
         return v
 
 
 class MediaFileUpdateSchema(Schema):
     """更新媒体文件Schema"""
-    
-    title: Optional[str] = Field(None, min_length=1, max_length=200, description="媒体标题")
+
+    title: Optional[str] = Field(
+        None, min_length=1, max_length=200, description="媒体标题"
+    )
     description: Optional[str] = Field(None, max_length=1000, description="媒体描述")
     tags: Optional[str] = Field(None, max_length=200, description="标签")
     category: Optional[MediaCategory] = Field(None, description="分类")
@@ -168,7 +188,7 @@ class MediaFileUpdateSchema(Schema):
 
 class MediaFileResponseSchema(Schema):
     """媒体文件响应Schema"""
-    
+
     id: int = Field(..., description="媒体文件ID")
     family_id: int = Field(..., description="家族ID")
     uploader_id: int = Field(..., description="上传者ID")
@@ -200,7 +220,7 @@ class MediaFileResponseSchema(Schema):
 
 class MediaFileListResponseSchema(Schema):
     """媒体文件列表响应Schema"""
-    
+
     id: int = Field(..., description="媒体文件ID")
     title: str = Field(..., description="媒体标题")
     file_type: MediaFileType = Field(..., description="文件类型")
@@ -214,7 +234,7 @@ class MediaFileListResponseSchema(Schema):
 
 class MediaMemberTagCreateSchema(Schema):
     """创建媒体成员标记Schema"""
-    
+
     media_id: int = Field(..., description="媒体文件ID")
     member_id: int = Field(..., description="成员ID")
     x_coordinate: Optional[float] = Field(None, ge=0, le=100, description="X坐标百分比")
@@ -225,7 +245,7 @@ class MediaMemberTagCreateSchema(Schema):
 
 class MediaMemberTagResponseSchema(Schema):
     """媒体成员标记响应Schema"""
-    
+
     id: int = Field(..., description="标记ID")
     media_id: int = Field(..., description="媒体文件ID")
     member_id: int = Field(..., description="成员ID")
@@ -242,7 +262,7 @@ class MediaMemberTagResponseSchema(Schema):
 
 class MediaAlbumCreateSchema(Schema):
     """创建媒体相册Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     name: str = Field(..., min_length=1, max_length=100, description="相册名称")
     description: Optional[str] = Field(None, max_length=500, description="相册描述")
@@ -252,19 +272,21 @@ class MediaAlbumCreateSchema(Schema):
     end_date: Optional[date] = Field(None, description="结束日期")
     visibility: AlbumVisibility = Field(AlbumVisibility.FAMILY, description="可见性")
     sort_order: int = Field(0, ge=0, description="排序权重")
-    
-    @model_validator(mode='after')
+
+    @model_validator(mode="after")
     def validate_date_range(self):
         """验证日期范围"""
         if self.end_date and self.start_date and self.end_date < self.start_date:
-            raise ValueError('结束日期不能早于开始日期')
+            raise ValueError("结束日期不能早于开始日期")
         return self
 
 
 class MediaAlbumUpdateSchema(Schema):
     """更新媒体相册Schema"""
-    
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="相册名称")
+
+    name: Optional[str] = Field(
+        None, min_length=1, max_length=100, description="相册名称"
+    )
     description: Optional[str] = Field(None, max_length=500, description="相册描述")
     album_type: Optional[AlbumType] = Field(None, description="相册类型")
     tags: Optional[str] = Field(None, max_length=200, description="标签")
@@ -276,7 +298,7 @@ class MediaAlbumUpdateSchema(Schema):
 
 class MediaAlbumResponseSchema(Schema):
     """媒体相册响应Schema"""
-    
+
     id: int = Field(..., description="相册ID")
     family_id: int = Field(..., description="家族ID")
     creator_id: int = Field(..., description="创建者ID")
@@ -297,7 +319,7 @@ class MediaAlbumResponseSchema(Schema):
 
 class MediaAlbumItemCreateSchema(Schema):
     """创建相册媒体项Schema"""
-    
+
     album_id: int = Field(..., description="相册ID")
     media_id: int = Field(..., description="媒体文件ID")
     sort_order: int = Field(0, ge=0, description="排序序号")
@@ -306,7 +328,7 @@ class MediaAlbumItemCreateSchema(Schema):
 
 class MediaAlbumItemResponseSchema(Schema):
     """相册媒体项响应Schema"""
-    
+
     id: int = Field(..., description="项目ID")
     album_id: int = Field(..., description="相册ID")
     media_id: int = Field(..., description="媒体文件ID")
@@ -318,7 +340,7 @@ class MediaAlbumItemResponseSchema(Schema):
 
 class MediaCommentCreateSchema(Schema):
     """创建媒体评论Schema"""
-    
+
     media_id: int = Field(..., description="媒体文件ID")
     parent_comment_id: Optional[int] = Field(None, description="父评论ID")
     content: str = Field(..., max_length=1000, description="评论内容")
@@ -326,14 +348,14 @@ class MediaCommentCreateSchema(Schema):
 
 class MediaCommentUpdateSchema(Schema):
     """更新媒体评论Schema"""
-    
+
     content: Optional[str] = Field(None, max_length=1000, description="评论内容")
     status: Optional[CommentStatus] = Field(None, description="状态")
 
 
 class MediaCommentResponseSchema(Schema):
     """媒体评论响应Schema"""
-    
+
     id: int = Field(..., description="评论ID")
     media_id: int = Field(..., description="媒体文件ID")
     commenter_id: int = Field(..., description="评论者ID")
@@ -347,9 +369,10 @@ class MediaCommentResponseSchema(Schema):
 
 from apps.common.schemas import PaginationQuerySchema
 
+
 class MediaSearchSchema(PaginationQuerySchema):
     """媒体搜索Schema"""
-    
+
     family_id: Optional[int] = Field(None, description="家族ID")
     keyword: Optional[str] = Field(None, description="搜索关键词")
     file_type: Optional[MediaFileType] = Field(None, description="文件类型")
@@ -360,12 +383,14 @@ class MediaSearchSchema(PaginationQuerySchema):
     taken_date_end: Optional[datetime] = Field(None, description="拍摄结束时间")
     location: Optional[str] = Field(None, description="地点筛选")
     tags: Optional[str] = Field(None, description="标签筛选")
-    processing_status: Optional[MediaProcessingStatus] = Field(None, description="处理状态")
+    processing_status: Optional[MediaProcessingStatus] = Field(
+        None, description="处理状态"
+    )
 
 
 class MediaStatisticsSchema(Schema):
     """媒体统计Schema"""
-    
+
     total_files: int = Field(..., description="总文件数")
     total_size: int = Field(..., description="总文件大小")
     image_count: int = Field(..., description="图片数量")
@@ -380,7 +405,7 @@ class MediaStatisticsSchema(Schema):
 
 class MediaUploadSchema(Schema):
     """媒体上传Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     title: str = Field(..., min_length=1, max_length=200, description="媒体标题")
     description: Optional[str] = Field(None, max_length=1000, description="媒体描述")
@@ -388,12 +413,14 @@ class MediaUploadSchema(Schema):
     tags: Optional[str] = Field(None, max_length=200, description="标签")
     taken_date: Optional[datetime] = Field(None, description="拍摄时间")
     location: Optional[str] = Field(None, max_length=200, description="拍摄地点")
-    visibility: MediaPrivacyLevel = Field(MediaPrivacyLevel.FAMILY, description="可见性")
+    visibility: MediaPrivacyLevel = Field(
+        MediaPrivacyLevel.FAMILY, description="可见性"
+    )
 
 
 class MediaBatchUploadSchema(Schema):
     """批量媒体上传Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     files: List[MediaUploadSchema] = Field(..., description="文件列表")
     auto_categorize: bool = Field(True, description="自动分类")
@@ -402,7 +429,7 @@ class MediaBatchUploadSchema(Schema):
 
 class MediaExportSchema(Schema):
     """媒体导出Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     export_format: ExportFormat = Field(ExportFormat.ZIP, description="导出格式")
     include_metadata: bool = Field(True, description="包含元数据")
@@ -415,7 +442,7 @@ class MediaExportSchema(Schema):
 
 class MediaImportSchema(Schema):
     """媒体导入Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     import_source: ImportSource = Field(..., description="导入源")
     auto_categorize: bool = Field(True, description="自动分类")
@@ -426,7 +453,7 @@ class MediaImportSchema(Schema):
 
 class MediaProcessingJobSchema(Schema):
     """媒体处理任务Schema"""
-    
+
     id: int = Field(..., description="任务ID")
     media_id: int = Field(..., description="媒体文件ID")
     job_type: JobType = Field(..., description="任务类型")
@@ -440,9 +467,9 @@ class MediaProcessingJobSchema(Schema):
 
 class MediaAnalyticsSchema(Schema):
     """媒体分析Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
-    period: str = Field('month', description="统计周期")
+    period: str = Field("month", description="统计周期")
     view_stats: List[dict] = Field(..., description="查看统计")
     upload_stats: List[dict] = Field(..., description="上传统计")
     popular_media: List[dict] = Field(..., description="热门媒体")

@@ -13,11 +13,8 @@ from typing import Tuple, List
 from urllib.parse import urljoin
 from django.conf import settings
 from django.utils import timezone
-from .constants import (
-    INVITATION_CODE_LENGTH,
-    ERROR_MESSAGES,
-    ROLE_WEIGHTS
-)
+from .constants import INVITATION_CODE_LENGTH, ERROR_MESSAGES, ROLE_WEIGHTS
+
 
 class FamilyCodeGenerator:
     """家族相关代码生成器"""
@@ -32,7 +29,7 @@ class FamilyCodeGenerator:
         """
 
         alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(INVITATION_CODE_LENGTH))
+        return "".join(secrets.choice(alphabet) for _ in range(INVITATION_CODE_LENGTH))
 
     @staticmethod
     def generate_family_slug(name: str) -> str:
@@ -47,12 +44,15 @@ class FamilyCodeGenerator:
         """
 
         # 清理名称
-        slug = re.sub(r'[^\w\s-]', '', name.lower())
-        slug = re.sub(r'[-\s]+', '-', slug)
+        slug = re.sub(r"[^\w\s-]", "", name.lower())
+        slug = re.sub(r"[-\s]+", "-", slug)
 
         # 添加随机后缀
-        suffix = ''.join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        suffix = "".join(
+            secrets.choice(string.ascii_lowercase + string.digits) for _ in range(6)
+        )
         return f"{slug}-{suffix}"
+
 
 class FamilyValidator:
     """家族相关验证器"""
@@ -87,21 +87,21 @@ class FamilyValidator:
         """
 
         if not contact or not isinstance(contact, str):
-            return False, 'invalid'
+            return False, "invalid"
 
         contact = contact.strip()
 
         # 邮箱验证
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if re.match(email_pattern, contact):
-            return True, 'email'
+            return True, "email"
 
         # 手机号验证（简单版本）
-        phone_pattern = r'^1[3-9]\d{9}$'
+        phone_pattern = r"^1[3-9]\d{9}$"
         if re.match(phone_pattern, contact):
-            return True, 'phone'
+            return True, "phone"
 
-        return False, 'invalid'
+        return False, "invalid"
 
     @staticmethod
     def validate_invitation_code(code: str) -> bool:
@@ -118,6 +118,7 @@ class FamilyValidator:
             return False
 
         return len(code) == INVITATION_CODE_LENGTH and code.isalnum()
+
 
 class FamilyFormatter:
     """家族相关格式化器"""
@@ -183,18 +184,19 @@ class FamilyFormatter:
             str: 格式化后的级别
         """
         level_map = {
-            'public': '🌍 公开',
-            'members': '👥 成员可见',
-            'family': '🏠 家族可见',
-            'private': '🔒 私有',
+            "public": "🌍 公开",
+            "members": "👥 成员可见",
+            "family": "🏠 家族可见",
+            "private": "🔒 私有",
         }
         return level_map.get(level, level)
+
 
 class FamilyUrlBuilder:
     """家族URL构建器"""
 
     @staticmethod
-    def build_family_url(family_id: int, path: str = '') -> str:
+    def build_family_url(family_id: int, path: str = "") -> str:
         """
         构建家族URL
 
@@ -205,7 +207,7 @@ class FamilyUrlBuilder:
         Returns:
             str: 完整URL
         """
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        base_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
         family_path = f"/family/{family_id}"
 
         if path:
@@ -224,16 +226,19 @@ class FamilyUrlBuilder:
         Returns:
             str: 邀请URL
         """
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        base_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
         invitation_path = f"/invitation/{invitation_code}"
 
         return urljoin(base_url, invitation_path)
+
 
 class FamilyPermissionHelper:
     """家族权限辅助器"""
 
     @staticmethod
-    def can_user_perform_action(user_permissions: List[str], required_permission: str) -> bool:
+    def can_user_perform_action(
+        user_permissions: List[str], required_permission: str
+    ) -> bool:
         """
         检查用户是否有执行某个操作的权限
 
@@ -259,9 +264,10 @@ class FamilyPermissionHelper:
         """
 
         if not roles:
-            return 'guest'
+            return "guest"
 
         return max(roles, key=lambda role: ROLE_WEIGHTS.get(role, 0))
+
 
 # 工具函数快捷方式
 generate_invitation_code = FamilyCodeGenerator.generate_invitation_code

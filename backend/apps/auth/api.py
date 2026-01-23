@@ -28,7 +28,7 @@ from apps.common.authentication import (
     generate_jwt_tokens,
     refresh_access_token,
     authenticate_user,
-    get_current_user
+    get_current_user,
 )
 from apps.common.exceptions import ValidationError, AuthenticationError, OperationError
 from apps.common.schemas import SuccessResponseSchema, ApiResponseSchema
@@ -40,12 +40,13 @@ from .schemas import (
     LoginResponseSchema,
     RegisterResponseSchema,
     RefreshTokenSchema,
-    TokenResponseSchema
+    TokenResponseSchema,
 )
 
 User = get_user_model()
 
 # ==================== 控制器 ====================
+
 
 class AuthController:
     """
@@ -75,7 +76,12 @@ class AuthController:
     def _register_auth_routes(self) -> None:
         """注册认证相关路由"""
 
-        @self.router.post("/register", response=RegisterResponseSchema, summary="用户注册", tags=["认证"])
+        @self.router.post(
+            "/register",
+            response=RegisterResponseSchema,
+            summary="用户注册",
+            tags=["认证"],
+        )
         def register(request: HttpRequest, data: UserRegisterSchema):
             """
             用户注册
@@ -103,7 +109,7 @@ class AuthController:
                         password=make_password(data.password),
                         first_name=data.first_name or "",
                         last_name=data.last_name or "",
-                        is_active=True
+                        is_active=True,
                     )
 
                 # 序列化用户信息
@@ -114,13 +120,10 @@ class AuthController:
                     first_name=user.first_name,
                     last_name=user.last_name,
                     is_active=user.is_active,
-                    date_joined=user.date_joined.isoformat()
+                    date_joined=user.date_joined.isoformat(),
                 )
 
-                return RegisterResponseSchema(
-                    user=user_info,
-                    message="注册成功"
-                )
+                return RegisterResponseSchema(user=user_info, message="注册成功")
 
             except ValidationError:
                 raise
@@ -128,7 +131,9 @@ class AuthController:
                 logger.error(f"User registration error: {e}")
                 raise OperationError("注册失败，请稍后重试")
 
-        @self.router.post("/login", response=LoginResponseSchema, summary="用户登录", tags=["认证"])
+        @self.router.post(
+            "/login", response=LoginResponseSchema, summary="用户登录", tags=["认证"]
+        )
         def login(request: HttpRequest, data: UserLoginSchema):
             """
             用户登录
@@ -155,15 +160,15 @@ class AuthController:
                     first_name=user.first_name,
                     last_name=user.last_name,
                     is_active=user.is_active,
-                    date_joined=user.date_joined.isoformat()
+                    date_joined=user.date_joined.isoformat(),
                 )
 
                 return LoginResponseSchema(
-                    access_token=tokens['access_token'],
-                    refresh_token=tokens['refresh_token'],
-                    token_type=tokens['token_type'],
-                    expires_in=tokens['expires_in'],
-                    user=user_info
+                    access_token=tokens["access_token"],
+                    refresh_token=tokens["refresh_token"],
+                    token_type=tokens["token_type"],
+                    expires_in=tokens["expires_in"],
+                    user=user_info,
                 )
 
             except (ValidationError, AuthenticationError):
@@ -172,7 +177,9 @@ class AuthController:
                 logger.error(f"User login error: {e}")
                 raise OperationError("登录失败，请稍后重试")
 
-        @self.router.post("/logout", response=SuccessResponseSchema, summary="用户登出", tags=["认证"])
+        @self.router.post(
+            "/logout", response=SuccessResponseSchema, summary="用户登出", tags=["认证"]
+        )
         def logout(request: HttpRequest):
             """
             用户登出
@@ -188,8 +195,7 @@ class AuthController:
                 logger.info(f"User {user.username} logged out")
 
                 return create_success_response(
-                    message="登出成功",
-                    request_id=request_id
+                    message="登出成功", request_id=request_id
                 )
 
             except AuthenticationError:
@@ -201,7 +207,12 @@ class AuthController:
     def _register_token_routes(self) -> None:
         """注册令牌管理路由"""
 
-        @self.router.post("/refresh", response=TokenResponseSchema, summary="刷新访问令牌", tags=["认证"])
+        @self.router.post(
+            "/refresh",
+            response=TokenResponseSchema,
+            summary="刷新访问令牌",
+            tags=["认证"],
+        )
         def refresh_token(request: HttpRequest, data: RefreshTokenSchema):
             """
             刷新访问令牌
@@ -225,7 +236,9 @@ class AuthController:
     def _register_user_routes(self) -> None:
         """注册用户信息路由"""
 
-        @self.router.get("/me", response=ApiResponseSchema, summary="获取当前用户信息", tags=["认证"])
+        @self.router.get(
+            "/me", response=ApiResponseSchema, summary="获取当前用户信息", tags=["认证"]
+        )
         def get_current_user_info(request: HttpRequest):
             """
             获取当前认证用户的基本信息
@@ -244,13 +257,13 @@ class AuthController:
                     "is_staff": user.is_staff,
                     "is_superuser": user.is_superuser,
                     "date_joined": user.date_joined.isoformat(),
-                    "last_login": user.last_login.isoformat() if user.last_login else None
+                    "last_login": user.last_login.isoformat()
+                    if user.last_login
+                    else None,
                 }
 
                 return create_success_response(
-                    data=user_info,
-                    message="获取用户信息成功",
-                    request_id=request_id
+                    data=user_info, message="获取用户信息成功", request_id=request_id
                 )
 
             except AuthenticationError:
@@ -259,15 +272,11 @@ class AuthController:
                 logger.error(f"Get current user error: {e}")
                 raise OperationError("获取用户信息失败")
 
+
 # 实例化控制器
 auth_controller = AuthController()
 router = auth_controller.router
 auth_router = router  # 为了兼容性添加别名
 
 # 导出
-__all__ = [
-    "AuthController",
-    "auth_controller",
-    "router",
-    "auth_router"
-]
+__all__ = ["AuthController", "auth_controller", "router", "auth_router"]

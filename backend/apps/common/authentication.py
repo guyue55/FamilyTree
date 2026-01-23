@@ -17,6 +17,7 @@ import time
 
 User = get_user_model()
 
+
 class JWTAuth(HttpBearer):
     """
     Django Ninja JWT认证类
@@ -37,19 +38,19 @@ class JWTAuth(HttpBearer):
         """
         try:
             # 获取JWT配置
-            secret_key = getattr(settings, 'JWT_SECRET_KEY', settings.SECRET_KEY)
-            algorithm = getattr(settings, 'JWT_ALGORITHM', 'HS256')
+            secret_key = getattr(settings, "JWT_SECRET_KEY", settings.SECRET_KEY)
+            algorithm = getattr(settings, "JWT_ALGORITHM", "HS256")
 
             # 解码JWT token
             payload = jwt.decode(token, secret_key, algorithms=[algorithm])
 
             # 检查token类型
-            if payload.get('type') != 'access':
+            if payload.get("type") != "access":
                 logger.warning("Invalid token type")
                 return None
 
             # 获取用户
-            user_id = payload.get('user_id')
+            user_id = payload.get("user_id")
             if not user_id:
                 logger.warning("JWT token missing user_id")
                 return None
@@ -73,10 +74,12 @@ class JWTAuth(HttpBearer):
             logger.error(f"JWT authentication error: {e}")
             return None
 
+
 class CustomJWTAuth(HttpBearer):
     """
     自定义JWT认证类，在认证失败时抛出异常
     """
+
 
 def generate_jwt_tokens(user: User) -> Dict[str, Any]:
     """
@@ -91,27 +94,29 @@ def generate_jwt_tokens(user: User) -> Dict[str, Any]:
     now = int(time.time())  # 使用UTC时间戳
 
     # 获取JWT配置
-    secret_key = getattr(settings, 'JWT_SECRET_KEY', settings.SECRET_KEY)
-    algorithm = getattr(settings, 'JWT_ALGORITHM', 'HS256')
-    access_lifetime = getattr(settings, 'JWT_ACCESS_TOKEN_LIFETIME', 300)  # 5分钟，测试用
-    refresh_lifetime = getattr(settings, 'JWT_REFRESH_TOKEN_LIFETIME', 604800)  # 7天
+    secret_key = getattr(settings, "JWT_SECRET_KEY", settings.SECRET_KEY)
+    algorithm = getattr(settings, "JWT_ALGORITHM", "HS256")
+    access_lifetime = getattr(
+        settings, "JWT_ACCESS_TOKEN_LIFETIME", 300
+    )  # 5分钟，测试用
+    refresh_lifetime = getattr(settings, "JWT_REFRESH_TOKEN_LIFETIME", 604800)  # 7天
 
     # 访问令牌payload
     access_payload = {
-        'user_id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'iat': now,
-        'exp': now + access_lifetime,
-        'type': 'access'
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "iat": now,
+        "exp": now + access_lifetime,
+        "type": "access",
     }
 
     # 刷新令牌payload
     refresh_payload = {
-        'user_id': user.id,
-        'iat': now,
-        'exp': now + refresh_lifetime,
-        'type': 'refresh'
+        "user_id": user.id,
+        "iat": now,
+        "exp": now + refresh_lifetime,
+        "type": "refresh",
     }
 
     # 生成令牌
@@ -119,11 +124,12 @@ def generate_jwt_tokens(user: User) -> Dict[str, Any]:
     refresh_token = jwt.encode(refresh_payload, secret_key, algorithm=algorithm)
 
     return {
-        'access_token': access_token,
-        'refresh_token': refresh_token,
-        'token_type': 'Bearer',
-        'expires_in': access_lifetime
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "Bearer",
+        "expires_in": access_lifetime,
     }
+
 
 def refresh_access_token(refresh_token: str) -> Optional[Dict[str, Any]]:
     """
@@ -137,19 +143,19 @@ def refresh_access_token(refresh_token: str) -> Optional[Dict[str, Any]]:
     """
     try:
         # 获取JWT配置
-        secret_key = getattr(settings, 'JWT_SECRET_KEY', settings.SECRET_KEY)
-        algorithm = getattr(settings, 'JWT_ALGORITHM', 'HS256')
+        secret_key = getattr(settings, "JWT_SECRET_KEY", settings.SECRET_KEY)
+        algorithm = getattr(settings, "JWT_ALGORITHM", "HS256")
 
         # 解码刷新令牌
         payload = jwt.decode(refresh_token, secret_key, algorithms=[algorithm])
 
         # 检查令牌类型
-        if payload.get('type') != 'refresh':
+        if payload.get("type") != "refresh":
             logger.warning("Invalid token type for refresh")
             return None
 
         # 获取用户
-        user_id = payload.get('user_id')
+        user_id = payload.get("user_id")
         user = User.objects.get(id=user_id, is_active=True)
 
         # 生成新的令牌
@@ -167,6 +173,7 @@ def refresh_access_token(refresh_token: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
         return None
+
 
 def authenticate_user(username: str, password: str) -> Optional[User]:
     """
@@ -200,6 +207,7 @@ def authenticate_user(username: str, password: str) -> Optional[User]:
         logger.error(f"User authentication error: {e}")
         return None
 
+
 def get_current_user(request: HttpRequest) -> User:
     """
     从请求中获取当前认证用户
@@ -213,10 +221,11 @@ def get_current_user(request: HttpRequest) -> User:
     Raises:
         AuthenticationError: 如果用户未认证
     """
-    user = getattr(request, 'user', None)
+    user = getattr(request, "user", None)
     if not user or not user.is_authenticated:
         raise AuthenticationError("认证失败，请先登录")
     return user
+
 
 def require_auth(request: HttpRequest) -> User:
     """
@@ -232,6 +241,7 @@ def require_auth(request: HttpRequest) -> User:
         AuthenticationError: 如果用户未认证
     """
     return get_current_user(request)
+
 
 def require_staff(request: HttpRequest) -> User:
     """
@@ -252,6 +262,7 @@ def require_staff(request: HttpRequest) -> User:
         raise PermissionError("需要管理员权限")
     return user
 
+
 def require_superuser(request: HttpRequest) -> User:
     """
     要求超级用户权限的装饰器辅助函数
@@ -271,19 +282,20 @@ def require_superuser(request: HttpRequest) -> User:
         raise PermissionError("需要超级用户权限")
     return user
 
+
 # 创建全局认证实例
 jwt_auth = JWTAuth()
 
 # ==================== 导出 ====================
 
 __all__ = [
-    'JWTAuth',
-    'jwt_auth',
-    'generate_jwt_tokens',
-    'refresh_access_token',
-    'authenticate_user',
-    'get_current_user',
-    'require_auth',
-    'require_staff',
-    'require_superuser'
+    "JWTAuth",
+    "jwt_auth",
+    "generate_jwt_tokens",
+    "refresh_access_token",
+    "authenticate_user",
+    "get_current_user",
+    "require_auth",
+    "require_staff",
+    "require_superuser",
 ]

@@ -10,11 +10,12 @@ from django.core.paginator import Paginator
 from django.db.models import QuerySet
 from math import ceil
 
+
 def paginate_queryset(
     queryset: QuerySet,
     page: int = 1,
     page_size: int = 20,
-    serializer: Optional[Callable] = None
+    serializer: Optional[Callable] = None,
 ) -> Dict[str, Any]:
     """
     分页查询集
@@ -48,20 +49,21 @@ def paginate_queryset(
         items = [serializer(item) for item in items]
 
     return {
-        'items': items,
-        'total': paginator.count,
-        'page': page,
-        'page_size': page_size,
-        'total_pages': paginator.num_pages,
-        'has_next': page_obj.has_next(),
-        'has_prev': page_obj.has_previous()
+        "items": items,
+        "total": paginator.count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": paginator.num_pages,
+        "has_next": page_obj.has_next(),
+        "has_prev": page_obj.has_previous(),
     }
+
 
 def paginate_list(
     data_list: List[Any],
     page: int = 1,
     page_size: int = 20,
-    serializer: Optional[Callable] = None
+    serializer: Optional[Callable] = None,
 ) -> Dict[str, Any]:
     """
     分页列表
@@ -94,16 +96,17 @@ def paginate_list(
         items = [serializer(item) for item in items]
 
     return {
-        'items': items,
-        'total': total,
-        'page': page,
-        'page_size': page_size,
-        'total_pages': total_pages,
-        'has_next': page < total_pages,
-        'has_prev': page > 1
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_prev": page > 1,
     }
 
+
 __all__ = [
-    'paginate_queryset',
-    'paginate_list',
+    "paginate_queryset",
+    "paginate_list",
 ]

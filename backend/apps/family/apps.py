@@ -12,12 +12,13 @@ from django.db.utils import OperationalError
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
+
 class FamilyConfig(AppConfig):
     """家族应用配置类"""
 
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.family'
-    verbose_name = _('家族管理')
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.family"
+    verbose_name = _("家族管理")
 
     def ready(self):
         """应用准备就绪时的初始化操作"""
@@ -47,10 +48,22 @@ class FamilyConfig(AppConfig):
 
         # 检查是否在执行管理命令
         management_commands = [
-            'makemigrations', 'migrate', 'showmigrations', 'sqlmigrate',
-            'squashmigrations', 'test', 'check', 'collectstatic',
-            'compilemessages', 'makemessages', 'shell', 'dbshell',
-            'dumpdata', 'loaddata', 'flush', 'inspectdb'
+            "makemigrations",
+            "migrate",
+            "showmigrations",
+            "sqlmigrate",
+            "squashmigrations",
+            "test",
+            "check",
+            "collectstatic",
+            "compilemessages",
+            "makemessages",
+            "shell",
+            "dbshell",
+            "dumpdata",
+            "loaddata",
+            "flush",
+            "inspectdb",
         ]
 
         # 如果在执行管理命令，跳过权限注册
@@ -59,7 +72,6 @@ class FamilyConfig(AppConfig):
 
         # 延迟注册权限，确保数据库已经准备好
         try:
-
             # 测试数据库连接
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
@@ -79,20 +91,21 @@ class FamilyConfig(AppConfig):
             from django.contrib.auth.models import Permission
             from django.contrib.contenttypes.models import ContentType
             from .models import Family
+
             family_content_type = ContentType.objects.get_for_model(Family)
 
             # 定义自定义权限
             custom_permissions = [
-                ('view_family_details', _('查看家族详情')),
-                ('manage_family_members', _('管理家族成员')),
-                ('manage_family_invitations', _('管理家族邀请')),
-                ('edit_family_settings', _('编辑家族设置')),
-                ('delete_family', _('删除家族')),
-                ('export_family_data', _('导出家族数据')),
-                ('import_family_data', _('导入家族数据')),
-                ('view_family_statistics', _('查看家族统计')),
-                ('moderate_family_content', _('审核家族内容')),
-                ('backup_family_data', _('备份家族数据')),
+                ("view_family_details", _("查看家族详情")),
+                ("manage_family_members", _("管理家族成员")),
+                ("manage_family_invitations", _("管理家族邀请")),
+                ("edit_family_settings", _("编辑家族设置")),
+                ("delete_family", _("删除家族")),
+                ("export_family_data", _("导出家族数据")),
+                ("import_family_data", _("导入家族数据")),
+                ("view_family_statistics", _("查看家族统计")),
+                ("moderate_family_content", _("审核家族内容")),
+                ("backup_family_data", _("备份家族数据")),
             ]
 
             for codename, name in custom_permissions:
@@ -110,35 +123,35 @@ class FamilyConfig(AppConfig):
 
         # 定义缓存键前缀
         cache_prefixes = {
-            'family_detail': 'family:detail:{}',
-            'family_members': 'family:members:{}',
-            'family_invitations': 'family:invitations:{}',
-            'family_settings': 'family:settings:{}',
-            'family_statistics': 'family:stats:{}',
-            'user_families': 'user:families:{}',
-            'family_permissions': 'family:permissions:{}:{}',
-            'family_search': 'family:search:{}',
-            'popular_families': 'families:popular',
-            'recent_families': 'families:recent',
+            "family_detail": "family:detail:{}",
+            "family_members": "family:members:{}",
+            "family_invitations": "family:invitations:{}",
+            "family_settings": "family:settings:{}",
+            "family_statistics": "family:stats:{}",
+            "user_families": "user:families:{}",
+            "family_permissions": "family:permissions:{}:{}",
+            "family_search": "family:search:{}",
+            "popular_families": "families:popular",
+            "recent_families": "families:recent",
         }
 
         # 存储到设置中（如果需要）
-        if not hasattr(settings, 'FAMILY_CACHE_KEYS'):
+        if not hasattr(settings, "FAMILY_CACHE_KEYS"):
             settings.FAMILY_CACHE_KEYS = cache_prefixes
 
     def _register_notification_types(self):
         """注册通知类型"""
         # 如果使用通知系统，在这里注册通知类型
         notification_types = [
-            'family_invitation_received',
-            'family_invitation_accepted',
-            'family_invitation_rejected',
-            'family_member_joined',
-            'family_member_left',
-            'family_member_role_changed',
-            'family_settings_updated',
-            'family_deleted',
-            'family_created',
+            "family_invitation_received",
+            "family_invitation_accepted",
+            "family_invitation_rejected",
+            "family_member_joined",
+            "family_member_left",
+            "family_member_role_changed",
+            "family_settings_updated",
+            "family_deleted",
+            "family_created",
         ]
 
         # 这里可以注册到通知系统

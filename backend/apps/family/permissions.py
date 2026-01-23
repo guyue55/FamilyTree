@@ -15,55 +15,63 @@ from apps.family.models import Family
 
 User = get_user_model()
 
+
 def raise_permission_denied(message: str = "权限不足"):
     """抛出权限拒绝异常"""
     raise PermissionError(message)
+
 
 # 延迟导入避免循环依赖
 def get_family_membership_model():
     """延迟导入FamilyMembership模型"""
     try:
         from apps.members.models import FamilyMembership
+
         return FamilyMembership
     except ImportError:
         return None
 
+
 class FamilyRole(str, Enum):
     """家族角色枚举"""
-    OWNER = "owner"          # 族长
-    ADMIN = "admin"          # 管理员
+
+    OWNER = "owner"  # 族长
+    ADMIN = "admin"  # 管理员
     MODERATOR = "moderator"  # 协管员
-    MEMBER = "member"        # 普通成员
+    MEMBER = "member"  # 普通成员
+
 
 class FamilyPermission(str, Enum):
     """家族权限枚举"""
+
     # 家族管理权限
-    MANAGE_FAMILY = "manage_family"              # 管理家族基本信息
-    DELETE_FAMILY = "delete_family"              # 删除家族
-    MANAGE_SETTINGS = "manage_settings"          # 管理家族设置
+    MANAGE_FAMILY = "manage_family"  # 管理家族基本信息
+    DELETE_FAMILY = "delete_family"  # 删除家族
+    MANAGE_SETTINGS = "manage_settings"  # 管理家族设置
 
     # 成员管理权限
-    INVITE_MEMBERS = "invite_members"            # 邀请成员
-    MANAGE_INVITATIONS = "manage_invitations"    # 管理邀请
-    REMOVE_MEMBERS = "remove_members"            # 移除成员
-    MANAGE_ROLES = "manage_roles"                # 管理成员角色
-    APPROVE_MEMBERS = "approve_members"          # 审批成员申请
+    INVITE_MEMBERS = "invite_members"  # 邀请成员
+    MANAGE_INVITATIONS = "manage_invitations"  # 管理邀请
+    REMOVE_MEMBERS = "remove_members"  # 移除成员
+    MANAGE_ROLES = "manage_roles"  # 管理成员角色
+    APPROVE_MEMBERS = "approve_members"  # 审批成员申请
 
     # 内容管理权限
-    MANAGE_TREE = "manage_tree"                  # 管理族谱树
-    ADD_MEMBERS = "add_members"                  # 添加族谱成员
-    EDIT_MEMBERS = "edit_members"                # 编辑族谱成员
-    DELETE_MEMBERS = "delete_members"            # 删除族谱成员
-    MANAGE_RELATIONSHIPS = "manage_relationships" # 管理关系
+    MANAGE_TREE = "manage_tree"  # 管理族谱树
+    ADD_MEMBERS = "add_members"  # 添加族谱成员
+    EDIT_MEMBERS = "edit_members"  # 编辑族谱成员
+    DELETE_MEMBERS = "delete_members"  # 删除族谱成员
+    MANAGE_RELATIONSHIPS = "manage_relationships"  # 管理关系
 
     # 媒体管理权限
-    UPLOAD_MEDIA = "upload_media"                # 上传媒体文件
-    MANAGE_MEDIA = "manage_media"                # 管理媒体文件
+    UPLOAD_MEDIA = "upload_media"  # 上传媒体文件
+    MANAGE_MEDIA = "manage_media"  # 管理媒体文件
 
     # 查看权限
-    VIEW_FAMILY = "view_family"                  # 查看家族信息
-    VIEW_TREE = "view_tree"                      # 查看族谱树
-    VIEW_MEMBERS = "view_members"                # 查看成员信息
+    VIEW_FAMILY = "view_family"  # 查看家族信息
+    VIEW_TREE = "view_tree"  # 查看族谱树
+    VIEW_MEMBERS = "view_members"  # 查看成员信息
+
 
 # 角色权限映射
 ROLE_PERMISSIONS = {
@@ -128,6 +136,7 @@ ROLE_PERMISSIONS = {
     ],
 }
 
+
 class FamilyPermissionChecker:
     """家族权限检查器"""
 
@@ -142,9 +151,15 @@ class FamilyPermissionChecker:
         """获取用户在家族中的角色"""
         if self._role is None:
             # 检查是否是家族创建者
-            if hasattr(self.family, 'created_by_id') and self.family.created_by_id == self.user.id:
+            if (
+                hasattr(self.family, "created_by_id")
+                and self.family.created_by_id == self.user.id
+            ):
                 self._role = FamilyRole.OWNER
-            elif hasattr(self.family, 'creator_id') and self.family.creator_id == self.user.id:
+            elif (
+                hasattr(self.family, "creator_id")
+                and self.family.creator_id == self.user.id
+            ):
                 self._role = FamilyRole.OWNER
             else:
                 # 从成员关系中获取角色
@@ -154,15 +169,17 @@ class FamilyPermissionChecker:
                         membership = FamilyMembership.objects.get(
                             family_id=self.family.id,
                             user_id=self.user.id,
-                            status='active'
+                            status="active",
                         )
                         # 根据成员角色映射到权限角色
                         role_mapping = {
-                            'admin': FamilyRole.ADMIN,
-                            'moderator': FamilyRole.MODERATOR,
-                            'member': FamilyRole.MEMBER,
+                            "admin": FamilyRole.ADMIN,
+                            "moderator": FamilyRole.MODERATOR,
+                            "member": FamilyRole.MEMBER,
                         }
-                        self._role = role_mapping.get(membership.role, FamilyRole.MEMBER)
+                        self._role = role_mapping.get(
+                            membership.role, FamilyRole.MEMBER
+                        )
                     except:
                         # 不是成员，检查是否可以作为访客查看
                         self._role = None
@@ -180,7 +197,7 @@ class FamilyPermissionChecker:
                 self._permissions = ROLE_PERMISSIONS.get(role, [])
             else:
                 # 检查是否是公开家族的访客权限
-                if self.family.visibility == 'public':
+                if self.family.visibility == "public":
                     self._permissions = [
                         FamilyPermission.VIEW_FAMILY,
                         FamilyPermission.VIEW_TREE,
@@ -198,7 +215,9 @@ class FamilyPermissionChecker:
         """要求指定权限，没有权限则抛出异常"""
         if not self.has_permission(permission):
             error_message = message or f"需要权限: {permission.value}"
-            logger.warning(f"Permission denied: user_id={self.user.id}, family_id={self.family.id}, permission={permission.value}")
+            logger.warning(
+                f"Permission denied: user_id={self.user.id}, family_id={self.family.id}, permission={permission.value}"
+            )
             raise_permission_denied(error_message)
 
     def is_member(self) -> bool:
@@ -238,7 +257,10 @@ class FamilyPermissionChecker:
 
         return False
 
-def get_family_permission_checker(user: User, family_id: int) -> FamilyPermissionChecker:
+
+def get_family_permission_checker(
+    user: User, family_id: int
+) -> FamilyPermissionChecker:
     """获取家族权限检查器"""
     try:
         family = Family.objects.get(id=family_id, is_active=True)
@@ -246,24 +268,31 @@ def get_family_permission_checker(user: User, family_id: int) -> FamilyPermissio
     except Family.DoesNotExist:
         raise PermissionError("家族不存在或已被删除")
 
-def require_family_permission(user: User, family_id: int, permission: FamilyPermission, message: str = None):
+
+def require_family_permission(
+    user: User, family_id: int, permission: FamilyPermission, message: str = None
+):
     """要求家族权限的装饰器辅助函数"""
     checker = get_family_permission_checker(user, family_id)
     checker.require_permission(permission, message)
     return checker
+
 
 def check_invitation_permission(user: User, invitation) -> bool:
     """检查邀请权限"""
     # 只有邀请者和被邀请者可以查看邀请
     return user.id in [invitation.inviter_id, invitation.invitee_id]
 
+
 class PermissionSchema(Schema):
     """权限信息Schema"""
+
     role: Optional[str]
     permissions: List[str]
     is_member: bool
     is_admin: bool
     is_owner: bool
+
 
 def get_user_family_permissions(user: User, family: Family) -> PermissionSchema:
     """获取用户在家族中的权限信息"""
@@ -274,5 +303,5 @@ def get_user_family_permissions(user: User, family: Family) -> PermissionSchema:
         permissions=[p.value for p in checker.permissions],
         is_member=checker.is_member(),
         is_admin=checker.is_admin_or_above(),
-        is_owner=checker.is_owner()
+        is_owner=checker.is_owner(),
     )

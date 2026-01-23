@@ -9,6 +9,7 @@ from typing import Optional
 from apps.family.exceptions import FamilyNotFoundError, FamilyPermissionError
 from apps.family.models import Family, FamilyMember
 
+
 class FamilyPermissionMixin:
     """家庭权限检查Mixin"""
 
@@ -16,9 +17,7 @@ class FamilyPermissionMixin:
         """检查用户是否为家庭成员"""
         try:
             return FamilyMember.objects.filter(
-                user_id=user_id,
-                family_id=family_id,
-                is_active=True
+                user_id=user_id, family_id=family_id, is_active=True
             ).exists()
         except Exception:
             return False
@@ -27,12 +26,11 @@ class FamilyPermissionMixin:
         """获取家庭成员对象"""
         try:
             return FamilyMember.objects.get(
-                user_id=user_id,
-                family_id=family_id,
-                is_active=True
+                user_id=user_id, family_id=family_id, is_active=True
             )
         except FamilyMember.DoesNotExist:
             return None
+
 
 class FamilyValidationMixin:
     """家庭验证Mixin"""
@@ -45,10 +43,10 @@ class FamilyValidationMixin:
             raise FamilyNotFoundError(f"Family with id {family_id} not found")
 
         if not FamilyMember.objects.filter(
-            user_id=user_id,
-            family_id=family_id,
-            is_active=True
+            user_id=user_id, family_id=family_id, is_active=True
         ).exists():
-            raise FamilyPermissionError("You don't have permission to access this family")
+            raise FamilyPermissionError(
+                "You don't have permission to access this family"
+            )
 
         return family

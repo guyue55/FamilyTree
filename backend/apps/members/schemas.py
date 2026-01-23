@@ -13,11 +13,11 @@ from pydantic import EmailStr, model_validator
 
 class MemberBaseSchema(Schema):
     """成员基础信息Schema"""
-    
+
     name: str = Field(..., min_length=1, max_length=50, description="成员姓名")
     english_name: Optional[str] = Field(None, max_length=100, description="英文名")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
-    gender: str = Field('unknown', description="性别")
+    gender: str = Field("unknown", description="性别")
     birth_date: Optional[date] = Field(None, description="出生日期")
     death_date: Optional[date] = Field(None, description="去世日期")
     is_alive: bool = Field(True, description="是否在世")
@@ -31,33 +31,35 @@ class MemberBaseSchema(Schema):
     bio: Optional[str] = Field(None, max_length=1000, description="个人简介")
     generation: int = Field(1, ge=1, le=20, description="世代")
     sort_order: int = Field(1, ge=1, description="排序序号")
-    visibility: str = Field('family', description="可见性")
+    visibility: str = Field("family", description="可见性")
 
 
 class MemberCreateSchema(MemberBaseSchema):
     """创建成员Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     user_id: Optional[int] = Field(None, description="关联用户ID")
-    
-    @model_validator(mode='after')
+
+    @model_validator(mode="after")
     def validate_member_constraints(self):
         """验证成员约束"""
         # 验证去世日期
         if self.death_date and self.birth_date and self.death_date < self.birth_date:
-            raise ValueError('去世日期不能早于出生日期')
-        
+            raise ValueError("去世日期不能早于出生日期")
+
         # 验证生存状态
         if not self.is_alive and not self.death_date:
-            raise ValueError('已故成员必须设置去世日期')
-        
+            raise ValueError("已故成员必须设置去世日期")
+
         return self
 
 
 class MemberUpdateSchema(Schema):
     """更新成员Schema"""
-    
-    name: Optional[str] = Field(None, min_length=1, max_length=50, description="成员姓名")
+
+    name: Optional[str] = Field(
+        None, min_length=1, max_length=50, description="成员姓名"
+    )
     english_name: Optional[str] = Field(None, max_length=100, description="英文名")
     nickname: Optional[str] = Field(None, max_length=50, description="昵称")
     gender: Optional[str] = Field(None, description="性别")
@@ -80,7 +82,7 @@ class MemberUpdateSchema(Schema):
 
 class MemberResponseSchema(Schema):
     """成员响应Schema"""
-    
+
     id: int = Field(..., description="成员ID")
     family_id: int = Field(..., description="家族ID")
     user_id: Optional[int] = Field(None, description="关联用户ID")
@@ -112,7 +114,7 @@ class MemberResponseSchema(Schema):
 
 class MemberListResponseSchema(Schema):
     """成员列表响应Schema"""
-    
+
     id: int = Field(..., description="成员ID")
     family_id: int = Field(..., description="家族ID")
     name: str = Field(..., description="成员姓名")
@@ -129,24 +131,24 @@ class MemberListResponseSchema(Schema):
 
 class FamilyMembershipSchema(Schema):
     """家族成员关系Schema"""
-    
+
     user_id: int = Field(..., description="用户ID")
     family_id: int = Field(..., description="家族ID")
     member_id: int = Field(..., description="成员ID")
-    role: str = Field('member', description="角色")
+    role: str = Field("member", description="角色")
     can_edit_tree: bool = Field(False, description="可编辑族谱")
     can_add_member: bool = Field(False, description="可添加成员")
     can_edit_member: bool = Field(False, description="可编辑成员")
     can_delete_member: bool = Field(False, description="可删除成员")
     can_manage_media: bool = Field(False, description="可管理媒体")
     can_invite_member: bool = Field(True, description="可邀请成员")
-    status: str = Field('active', description="状态")
-    join_method: str = Field('invited', description="加入方式")
+    status: str = Field("active", description="状态")
+    join_method: str = Field("invited", description="加入方式")
 
 
 class FamilyMembershipResponseSchema(FamilyMembershipSchema):
     """家族成员关系响应Schema"""
-    
+
     id: int = Field(..., description="关系ID")
     joined_at: datetime = Field(..., description="加入时间")
     last_active_at: datetime = Field(..., description="最后活跃时间")
@@ -156,17 +158,17 @@ class FamilyMembershipResponseSchema(FamilyMembershipSchema):
 
 class MemberNoteCreateSchema(Schema):
     """创建成员备注Schema"""
-    
+
     member_id: int = Field(..., description="成员ID")
     content: str = Field(..., max_length=1000, description="备注内容")
-    note_type: str = Field('general', description="备注类型")
+    note_type: str = Field("general", description="备注类型")
     is_private: bool = Field(False, description="是否私有")
-    visibility: str = Field('family', description="可见性")
+    visibility: str = Field("family", description="可见性")
 
 
 class MemberNoteUpdateSchema(Schema):
     """更新成员备注Schema"""
-    
+
     content: Optional[str] = Field(None, max_length=1000, description="备注内容")
     note_type: Optional[str] = Field(None, description="备注类型")
     is_private: Optional[bool] = Field(None, description="是否私有")
@@ -175,7 +177,7 @@ class MemberNoteUpdateSchema(Schema):
 
 class MemberNoteResponseSchema(Schema):
     """成员备注响应Schema"""
-    
+
     id: int = Field(..., description="备注ID")
     member_id: int = Field(..., description="成员ID")
     creator_id: int = Field(..., description="创建者ID")
@@ -189,9 +191,10 @@ class MemberNoteResponseSchema(Schema):
 
 from apps.common.schemas import PaginationQuerySchema
 
+
 class MemberSearchSchema(PaginationQuerySchema):
     """成员搜索Schema"""
-    
+
     family_id: Optional[int] = Field(None, description="家族ID")
     keyword: Optional[str] = Field(None, description="搜索关键词")
     gender: Optional[str] = Field(None, description="性别筛选")
@@ -206,7 +209,7 @@ class MemberSearchSchema(PaginationQuerySchema):
 
 class MemberQuerySchema(PaginationQuerySchema):
     """成员查询Schema"""
-    
+
     family_id: Optional[int] = Field(None, description="家族ID")
     search: Optional[str] = Field(None, description="搜索关键词")
     gender: Optional[str] = Field(None, description="性别筛选")
@@ -215,9 +218,10 @@ class MemberQuerySchema(PaginationQuerySchema):
     is_admin: Optional[bool] = Field(None, description="是否为管理员")
     ordering: Optional[str] = Field(None, description="排序字段")
 
+
 class MemberStatisticsSchema(Schema):
     """成员统计Schema"""
-    
+
     total_members: int = Field(..., description="总成员数")
     living_members: int = Field(..., description="在世成员数")
     deceased_members: int = Field(..., description="已故成员数")
@@ -231,7 +235,7 @@ class MemberStatisticsSchema(Schema):
 
 class MemberTreeNodeSchema(Schema):
     """成员树节点Schema"""
-    
+
     id: int = Field(..., description="成员ID")
     name: str = Field(..., description="成员姓名")
     nickname: Optional[str] = Field(None, description="昵称")
@@ -242,14 +246,14 @@ class MemberTreeNodeSchema(Schema):
     avatar: Optional[str] = Field(None, description="头像URL")
     generation: int = Field(..., description="世代")
     sort_order: int = Field(..., description="排序序号")
-    children: List['MemberTreeNodeSchema'] = Field([], description="子节点")
-    spouses: List['MemberTreeNodeSchema'] = Field([], description="配偶")
+    children: List["MemberTreeNodeSchema"] = Field([], description="子节点")
+    spouses: List["MemberTreeNodeSchema"] = Field([], description="配偶")
     relationships: List[dict] = Field([], description="关系信息")
 
 
 class MemberBatchCreateSchema(Schema):
     """批量创建成员Schema"""
-    
+
     members: List[MemberCreateSchema] = Field(..., description="成员列表")
     auto_generate_relationships: bool = Field(False, description="自动生成关系")
     skip_duplicates: bool = Field(True, description="跳过重复")
@@ -257,26 +261,26 @@ class MemberBatchCreateSchema(Schema):
 
 class MemberBatchUpdateSchema(Schema):
     """批量更新成员Schema"""
-    
+
     member_ids: List[int] = Field(..., description="成员ID列表")
     update_data: MemberUpdateSchema = Field(..., description="更新数据")
 
 
 class MemberImportSchema(Schema):
     """成员导入Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
     file_type: str = Field(..., description="文件类型")
     file_content: str = Field(..., description="文件内容")
     auto_create_relationships: bool = Field(False, description="自动创建关系")
-    merge_strategy: str = Field('skip', description="合并策略")
+    merge_strategy: str = Field("skip", description="合并策略")
 
 
 class MemberExportSchema(Schema):
     """成员导出Schema"""
-    
+
     family_id: int = Field(..., description="家族ID")
-    export_format: str = Field('json', description="导出格式")
+    export_format: str = Field("json", description="导出格式")
     include_photos: bool = Field(False, description="包含照片")
     include_notes: bool = Field(False, description="包含备注")
     include_relationships: bool = Field(True, description="包含关系")
@@ -286,7 +290,7 @@ class MemberExportSchema(Schema):
 
 class MemberValidationSchema(Schema):
     """成员验证Schema"""
-    
+
     member_id: int = Field(..., description="成员ID")
     validation_type: str = Field(..., description="验证类型")
     validation_result: bool = Field(..., description="验证结果")
@@ -296,7 +300,7 @@ class MemberValidationSchema(Schema):
 
 class MemberPermissionSchema(Schema):
     """成员权限Schema"""
-    
+
     member_id: int = Field(..., description="成员ID")
     permissions: List[str] = Field(..., description="权限列表")
     role: str = Field(..., description="角色")
@@ -306,7 +310,7 @@ class MemberPermissionSchema(Schema):
 
 class MemberActivityLogSchema(Schema):
     """成员活动日志Schema"""
-    
+
     id: int = Field(..., description="日志ID")
     member_id: int = Field(..., description="成员ID")
     user_id: int = Field(..., description="用户ID")

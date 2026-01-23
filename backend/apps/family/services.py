@@ -18,10 +18,14 @@ from .exceptions import (
     FamilyPermissionError,
     FamilyValidationError,
     FamilyNameConflictError,
-    FamilyMemberLimitError
+    FamilyMemberLimitError,
 )
 from .models import Family, FamilySettings, FamilyInvitation
-from .permissions import FamilyPermissionChecker, FamilyPermission, check_invitation_permission
+from .permissions import (
+    FamilyPermissionChecker,
+    FamilyPermission,
+    check_invitation_permission,
+)
 from .utils import generate_invitation_code
 from apps.common.constants import BusinessLimits
 from apps.common.exceptions import LimitExceededError
@@ -30,6 +34,7 @@ from apps.common.services import BaseService, CacheableService
 from apps.members.models import FamilyMembership
 
 User = get_user_model()
+
 
 class FamilyService(BaseService, CacheableService):
     """
@@ -44,9 +49,9 @@ class FamilyService(BaseService, CacheableService):
     cache_timeout = 3600  # 1小时缓存
 
     # 搜索字段配置
-    search_fields = ['name', 'description', 'tags', 'origin_location']
-    filter_fields = ['visibility', 'is_active', 'allow_join']
-    ordering_fields = ['created_at', 'updated_at', 'name', 'member_count']
+    search_fields = ["name", "description", "tags", "origin_location"]
+    filter_fields = ["visibility", "is_active", "allow_join"]
+    ordering_fields = ["created_at", "updated_at", "name", "member_count"]
 
     @classmethod
     def get_search_fields(cls) -> List[str]:
@@ -76,27 +81,27 @@ class FamilyService(BaseService, CacheableService):
             QuerySet: 过滤后的查询集
         """
         # 可见性过滤
-        if 'visibility' in filters:
-            queryset = queryset.filter(visibility=filters['visibility'])
+        if "visibility" in filters:
+            queryset = queryset.filter(visibility=filters["visibility"])
 
         # 活跃状态过滤
-        if 'is_active' in filters:
-            queryset = queryset.filter(is_active=filters['is_active'])
+        if "is_active" in filters:
+            queryset = queryset.filter(is_active=filters["is_active"])
 
         # 是否允许加入过滤
-        if 'allow_join' in filters:
-            queryset = queryset.filter(allow_join=filters['allow_join'])
+        if "allow_join" in filters:
+            queryset = queryset.filter(allow_join=filters["allow_join"])
 
         # 创建者过滤
-        if 'creator_id' in filters:
-            queryset = queryset.filter(creator_id=filters['creator_id'])
+        if "creator_id" in filters:
+            queryset = queryset.filter(creator_id=filters["creator_id"])
 
         # 日期范围过滤
-        if 'created_after' in filters:
-            queryset = queryset.filter(created_at__gte=filters['created_after'])
+        if "created_after" in filters:
+            queryset = queryset.filter(created_at__gte=filters["created_after"])
 
-        if 'created_before' in filters:
-            queryset = queryset.filter(created_at__lte=filters['created_before'])
+        if "created_before" in filters:
+            queryset = queryset.filter(created_at__lte=filters["created_before"])
 
         return queryset
 
@@ -135,16 +140,16 @@ class FamilyService(BaseService, CacheableService):
             QuerySet: 排序后的查询集
         """
         if not ordering:
-            return queryset.order_by('-created_at')  # 默认按创建时间降序
+            return queryset.order_by("-created_at")  # 默认按创建时间降序
 
         # 直接实现排序逻辑
         # 处理降序标识
-        desc = ordering.startswith('-')
+        desc = ordering.startswith("-")
         field = ordering[1:] if desc else ordering
 
         # 检查字段是否允许排序
         if field not in cls.get_ordering_fields():
-            return queryset.order_by('-created_at')  # 回退到默认排序
+            return queryset.order_by("-created_at")  # 回退到默认排序
 
         return queryset.order_by(ordering)
 
@@ -182,14 +187,11 @@ class FamilyService(BaseService, CacheableService):
 
         # 获取用户有权限的家族ID列表
         user_family_ids = FamilyMembership.objects.filter(
-            user_id=user.id,
-            status='active'
-        ).values_list('family_id', flat=True)
+            user_id=user.id, status="active"
+        ).values_list("family_id", flat=True)
 
         return queryset.filter(
-            Q(visibility='public') |
-            Q(creator_id=user.id) |
-            Q(id__in=user_family_ids)
+            Q(visibility="public") | Q(creator_id=user.id) | Q(id__in=user_family_ids)
         ).distinct()
 
     @classmethod
@@ -212,10 +214,12 @@ class FamilyService(BaseService, CacheableService):
         # 检查用户创建家族数量限制
         user_family_count = cls.model.objects.filter(creator_id=user.id).count()
         if user_family_count >= BusinessLimits.MAX_FAMILIES_PER_USER:
-            raise LimitExceededError(f"用户最多只能创建{BusinessLimits.MAX_FAMILIES_PER_USER}个家族")
+            raise LimitExceededError(
+                f"用户最多只能创建{BusinessLimits.MAX_FAMILIES_PER_USER}个家族"
+            )
 
         # 检查家族名称是否重复
-        name = data.get('name', '').strip()
+        name = data.get("name", "").strip()
         if not name:
             raise FamilyValidationError("家族名称不能为空")
 
@@ -223,23 +227,25 @@ class FamilyService(BaseService, CacheableService):
             raise FamilyNameConflictError(f"家族名称'{name}'已存在")
 
         # 设置创建者
-        data['creator_id'] = user.id
-        
+        data["creator_id"] = user.id
+
         # 设置默认值
-        data.setdefault('tags', '')
-        data.setdefault('description', '')
-        data.setdefault('origin_location', '')
-        data.setdefault('motto', '')
-        data.setdefault('visibility', 'family')
-        data.setdefault('allow_join', True)
-        data.setdefault('is_active', True)
-        data.setdefault('member_count', 1)
-        data.setdefault('generation_count', 1)
+        data.setdefault("tags", "")
+        data.setdefault("description", "")
+        data.setdefault("origin_location", "")
+        data.setdefault("motto", "")
+        data.setdefault("visibility", "family")
+        data.setdefault("allow_join", True)
+        data.setdefault("is_active", True)
+        data.setdefault("member_count", 1)
+        data.setdefault("generation_count", 1)
 
         return data
 
     @classmethod
-    def validate_update_data(cls, data: Dict[str, Any], instance: Family, user: User) -> Dict[str, Any]:
+    def validate_update_data(
+        cls, data: Dict[str, Any], instance: Family, user: User
+    ) -> Dict[str, Any]:
         """
         验证更新数据
 
@@ -261,7 +267,7 @@ class FamilyService(BaseService, CacheableService):
             raise FamilyPermissionError("没有编辑家族的权限")
 
         # 检查名称冲突
-        name = data.get('name')
+        name = data.get("name")
         if name and name != instance.name:
             if cls.model.objects.filter(name=name).exclude(id=instance.id).exists():
                 raise FamilyNameConflictError(f"家族名称'{name}'已存在")
@@ -292,11 +298,11 @@ class FamilyService(BaseService, CacheableService):
         settings, created = FamilySettings.objects.get_or_create(
             family_id=family.id,
             defaults={
-                'tree_layout': 'vertical',
-                'show_photos': True,
-                'show_birth_dates': True,  # 修正字段名
-                'privacy_level': 'family'
-            }
+                "tree_layout": "vertical",
+                "show_photos": True,
+                "show_birth_dates": True,  # 修正字段名
+                "privacy_level": "family",
+            },
         )
 
         logger.info(f"用户 {user.username} 创建了家族 {family.name}")
@@ -356,22 +362,22 @@ class FamilyService(BaseService, CacheableService):
         queryset = cls.apply_filters(queryset, filters)
 
         # 应用搜索
-        keyword = filters.get('keyword')
+        keyword = filters.get("keyword")
         if keyword:
             queryset = cls.apply_search(queryset, keyword)
 
         # 应用排序
-        ordering = filters.get('ordering', '-created_at')
+        ordering = filters.get("ordering", "-created_at")
         queryset = cls.apply_ordering(queryset, ordering)
 
         # 分页
-        page = filters.get('page', 1)
-        page_size = filters.get('page_size', 20)
+        page = filters.get("page", 1)
+        page_size = filters.get("page_size", 20)
 
         paginated_result = paginate_queryset(queryset, page, page_size)
 
         # 返回元组格式：(items, total)
-        return paginated_result['items'], paginated_result['total']
+        return paginated_result["items"], paginated_result["total"]
 
     @classmethod
     @transaction.atomic
@@ -455,24 +461,25 @@ class FamilyService(BaseService, CacheableService):
         if stats is None:
             # 获取活跃成员数量
             active_members_count = FamilyMembership.objects.filter(
-                family_id=family.id,
-                status='active'
+                family_id=family.id, status="active"
             ).count()
 
             stats = {
-                'member_count': family.member_count,
-                'generation_count': family.generation_count,
-                'active_members': active_members_count,
-                'recent_activities': family.get_recent_activities_count(),
-                'created_at': family.created_at,
-                'last_updated': family.updated_at
+                "member_count": family.member_count,
+                "generation_count": family.generation_count,
+                "active_members": active_members_count,
+                "recent_activities": family.get_recent_activities_count(),
+                "created_at": family.created_at,
+                "last_updated": family.updated_at,
             }
             cls.set_cache(cache_key, stats, timeout=1800)  # 30分钟缓存
 
         return stats
 
     @classmethod
-    def search_public_families(cls, keyword: str = None, **filters) -> Tuple[List[Family], int]:
+    def search_public_families(
+        cls, keyword: str = None, **filters
+    ) -> Tuple[List[Family], int]:
         """
         搜索公开家族
 
@@ -483,10 +490,7 @@ class FamilyService(BaseService, CacheableService):
         Returns:
             Tuple[List[Family], int]: (家族列表, 总数)
         """
-        queryset = cls.model.objects.filter(
-            visibility='public',
-            is_active=True
-        )
+        queryset = cls.model.objects.filter(visibility="public", is_active=True)
 
         # 应用搜索
         if keyword:
@@ -496,17 +500,17 @@ class FamilyService(BaseService, CacheableService):
         queryset = cls.apply_filters(queryset, filters)
 
         # 排序
-        ordering = filters.get('ordering', '-member_count')
+        ordering = filters.get("ordering", "-member_count")
         queryset = cls.apply_ordering(queryset, ordering)
 
         # 分页
-        page = filters.get('page', 1)
-        page_size = filters.get('page_size', 20)
+        page = filters.get("page", 1)
+        page_size = filters.get("page_size", 20)
 
         paginated_result = paginate_queryset(queryset, page, page_size)
 
         # 返回元组格式：(items, total)
-        return paginated_result['items'], paginated_result['total']
+        return paginated_result["items"], paginated_result["total"]
 
     @classmethod
     @transaction.atomic
@@ -528,23 +532,27 @@ class FamilyService(BaseService, CacheableService):
             raise FamilyPermissionError("该家族不允许直接加入")
 
         # 检查是否已经是成员
-        if FamilyMembership.objects.filter(family_id=family.id, user_id=user.id).exists():
+        if FamilyMembership.objects.filter(
+            family_id=family.id, user_id=user.id
+        ).exists():
             raise FamilyValidationError("您已经是该家族的成员")
 
         # 检查成员数量限制
         if family.member_count >= BusinessLimits.MAX_MEMBERS_PER_FAMILY:
-            raise FamilyMemberLimitError(f"家族成员数量已达上限({BusinessLimits.MAX_MEMBERS_PER_FAMILY})")
+            raise FamilyMemberLimitError(
+                f"家族成员数量已达上限({BusinessLimits.MAX_MEMBERS_PER_FAMILY})"
+            )
 
         # 加入家族 - 创建FamilyMembership记录
         FamilyMembership.objects.create(
             family_id=family.id,
             user_id=user.id,
-            role='member',
-            status='active',
-            join_method='direct'
+            role="member",
+            status="active",
+            join_method="direct",
         )
         family.member_count += 1
-        family.save(update_fields=['member_count'])
+        family.save(update_fields=["member_count"])
 
         # 清除缓存
         cls.clear_cache(f"{cls.cache_prefix}:detail:{family_id}")
@@ -570,7 +578,9 @@ class FamilyService(BaseService, CacheableService):
         family = cls.get_family_detail(family_id)
 
         # 检查是否是成员
-        if not FamilyMembership.objects.filter(family_id=family.id, user_id=user.id).exists():
+        if not FamilyMembership.objects.filter(
+            family_id=family.id, user_id=user.id
+        ).exists():
             raise FamilyValidationError("您不是该家族的成员")
 
         # 创建者不能离开自己的家族
@@ -580,7 +590,7 @@ class FamilyService(BaseService, CacheableService):
         # 离开家族 - 删除FamilyMembership记录
         FamilyMembership.objects.filter(family_id=family.id, user_id=user.id).delete()
         family.member_count -= 1
-        family.save(update_fields=['member_count'])
+        family.save(update_fields=["member_count"])
 
         # 清除缓存
         cls.clear_cache(f"{cls.cache_prefix}:detail:{family_id}")
@@ -595,8 +605,14 @@ class FamilyService(BaseService, CacheableService):
     # ============================================================================
 
     @classmethod
-    def get_family_invitations(cls, family_id: int, user: User, status: str = None,
-                              page: int = 1, page_size: int = 20) -> Tuple[List[FamilyInvitation], int]:
+    def get_family_invitations(
+        cls,
+        family_id: int,
+        user: User,
+        status: str = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[List[FamilyInvitation], int]:
         """
         获取家族邀请列表
 
@@ -617,21 +633,25 @@ class FamilyService(BaseService, CacheableService):
         if not checker.has_permission(FamilyPermission.MANAGE_INVITATIONS):
             raise FamilyPermissionError("无权限查看家族邀请")
 
-        queryset = FamilyInvitation.objects.filter(family_id=family_id).select_related('inviter')
+        queryset = FamilyInvitation.objects.filter(family_id=family_id).select_related(
+            "inviter"
+        )
 
         if status:
             queryset = queryset.filter(status=status)
 
-        queryset = queryset.order_by('-created_at')
+        queryset = queryset.order_by("-created_at")
 
         paginated_result = paginate_queryset(queryset, page, page_size)
 
         # 返回元组格式：(items, total)
-        return paginated_result['items'], paginated_result['total']
+        return paginated_result["items"], paginated_result["total"]
 
     @classmethod
     @transaction.atomic
-    def create_family_invitation(cls, family_id: int, invitation_data: Dict[str, Any], user: User) -> FamilyInvitation:
+    def create_family_invitation(
+        cls, family_id: int, invitation_data: Dict[str, Any], user: User
+    ) -> FamilyInvitation:
         """
         创建家族邀请
 
@@ -652,11 +672,11 @@ class FamilyService(BaseService, CacheableService):
             raise FamilyPermissionError("无权限发送邀请")
 
         # 检查是否已存在未处理的邀请
-        filters = {'family_id': family_id, 'status': 'pending'}
-        if invitation_data.get('invitee_email'):
-            filters['invitee_email'] = invitation_data['invitee_email']
-        elif invitation_data.get('invitee_phone'):
-            filters['invitee_phone'] = invitation_data['invitee_phone']
+        filters = {"family_id": family_id, "status": "pending"}
+        if invitation_data.get("invitee_email"):
+            filters["invitee_email"] = invitation_data["invitee_email"]
+        elif invitation_data.get("invitee_phone"):
+            filters["invitee_phone"] = invitation_data["invitee_phone"]
 
         if FamilyInvitation.objects.filter(**filters).exists():
             raise FamilyValidationError("已存在未处理的邀请")
@@ -667,11 +687,13 @@ class FamilyService(BaseService, CacheableService):
             inviter=user,
             invitation_code=generate_invitation_code(),
             expires_at=timezone.now() + timedelta(days=7),
-            status='pending',
-            **invitation_data
+            status="pending",
+            **invitation_data,
         )
 
-        logger.info(f"用户 {user.username} 向 {invitation_data.get('invitee_email', invitation_data.get('invitee_phone'))} 发送了家族邀请")
+        logger.info(
+            f"用户 {user.username} 向 {invitation_data.get('invitee_email', invitation_data.get('invitee_phone'))} 发送了家族邀请"
+        )
 
         return invitation
 
@@ -688,7 +710,9 @@ class FamilyService(BaseService, CacheableService):
             FamilyInvitation: 邀请实例
         """
         try:
-            invitation = FamilyInvitation.objects.select_related('inviter').get(id=invitation_id)
+            invitation = FamilyInvitation.objects.select_related("inviter").get(
+                id=invitation_id
+            )
         except FamilyInvitation.DoesNotExist:
             raise FamilyNotFoundError("邀请不存在")
 
@@ -725,18 +749,20 @@ class FamilyService(BaseService, CacheableService):
             raise FamilyPermissionError("无权限接受此邀请")
 
         # 检查邀请状态
-        if invitation.status != 'pending':
+        if invitation.status != "pending":
             raise FamilyValidationError("邀请已处理")
 
         if invitation.expires_at < timezone.now():
             raise FamilyValidationError("邀请已过期")
 
         # 检查是否已是家族成员
-        if FamilyMembership.objects.filter(family_id=invitation.family_id, user=user).exists():
+        if FamilyMembership.objects.filter(
+            family_id=invitation.family_id, user=user
+        ).exists():
             raise FamilyValidationError("您已是该家族成员")
 
         # 接受邀请
-        invitation.status = 'accepted'
+        invitation.status = "accepted"
         invitation.processed_at = timezone.now()
         invitation.processor = user
         invitation.save()
@@ -745,19 +771,18 @@ class FamilyService(BaseService, CacheableService):
         member = FamilyMembership.objects.create(
             family_id=invitation.family_id,
             user=user,
-            role='member',
-            joined_at=timezone.now()
+            role="member",
+            joined_at=timezone.now(),
         )
 
         # 清除相关缓存
         cls.clear_cache(f"{cls.cache_prefix}:detail:{invitation.family_id}")
 
-        logger.info(f"用户 {user.username} 接受了家族邀请并加入家族 {invitation.family_id}")
+        logger.info(
+            f"用户 {user.username} 接受了家族邀请并加入家族 {invitation.family_id}"
+        )
 
-        return {
-            'member': member,
-            'invitation': invitation
-        }
+        return {"member": member, "invitation": invitation}
 
     @classmethod
     @transaction.atomic
@@ -774,17 +799,21 @@ class FamilyService(BaseService, CacheableService):
         """
 
         try:
-            invitation = FamilyInvitation.objects.get(id=invitation_id, status='pending')
+            invitation = FamilyInvitation.objects.get(
+                id=invitation_id, status="pending"
+            )
         except FamilyInvitation.DoesNotExist:
             raise FamilyNotFoundError("邀请不存在或已处理")
 
         # 验证用户是否为被邀请者
-        if not (invitation.invitee_email == user.email or
-               invitation.invitee_phone == user.phone):
+        if not (
+            invitation.invitee_email == user.email
+            or invitation.invitee_phone == user.phone
+        ):
             raise FamilyPermissionError("您不是此邀请的接收者")
 
         # 更新邀请状态
-        invitation.status = 'rejected'
+        invitation.status = "rejected"
         invitation.rejected_at = timezone.now()
         invitation.save()
 
@@ -807,23 +836,22 @@ class FamilyService(BaseService, CacheableService):
         """
         try:
             invitation = FamilyInvitation.objects.select_related().get(
-                id=invitation_id,
-                status='pending'
+                id=invitation_id, status="pending"
             )
         except FamilyInvitation.DoesNotExist:
             raise FamilyNotFoundError("邀请不存在或已处理")
 
         # 权限检查：只有邀请者或家族管理员可以取消
-        if not (invitation.inviter == user or
-               FamilyMembership.objects.filter(
-                   family_id=invitation.family_id,
-                   user=user,
-                   role__in=['admin', 'owner']
-               ).exists()):
+        if not (
+            invitation.inviter == user
+            or FamilyMembership.objects.filter(
+                family_id=invitation.family_id, user=user, role__in=["admin", "owner"]
+            ).exists()
+        ):
             raise FamilyPermissionError("无权取消此邀请")
 
         # 更新邀请状态
-        invitation.status = 'cancelled'
+        invitation.status = "cancelled"
         invitation.save()
 
         logger.info(f"用户 {user.username} 取消了家族邀请 {invitation_id}")
@@ -855,15 +883,17 @@ class FamilyService(BaseService, CacheableService):
             # 如果不存在设置，创建默认设置
             return FamilySettings.objects.create(
                 family=family,
-                tree_layout='vertical',
+                tree_layout="vertical",
                 show_photos=True,
                 show_birth_death_dates=True,
-                privacy_level='family'
+                privacy_level="family",
             )
 
     @classmethod
     @transaction.atomic
-    def update_family_settings(cls, family_id: int, settings_data: Dict[str, Any], user: User) -> FamilySettings:
+    def update_family_settings(
+        cls, family_id: int, settings_data: Dict[str, Any], user: User
+    ) -> FamilySettings:
         """
         更新家族设置
 
@@ -885,11 +915,11 @@ class FamilyService(BaseService, CacheableService):
         settings, created = FamilySettings.objects.get_or_create(
             family=family,
             defaults={
-                'tree_layout': 'vertical',
-                'show_photos': True,
-                'show_birth_death_dates': True,
-                'privacy_level': 'family'
-            }
+                "tree_layout": "vertical",
+                "show_photos": True,
+                "show_birth_death_dates": True,
+                "privacy_level": "family",
+            },
         )
 
         # 更新设置

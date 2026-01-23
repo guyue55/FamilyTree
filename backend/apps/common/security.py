@@ -13,20 +13,21 @@ import secrets
 import time
 import hashlib
 
+
 class InputValidator:
     """输入验证器"""
 
     # 基本的XSS攻击模式
     XSS_PATTERNS = [
-        r'<script[^>]*>.*?</script>',
-        r'javascript:',
-        r'on\w+\s*=',
+        r"<script[^>]*>.*?</script>",
+        r"javascript:",
+        r"on\w+\s*=",
     ]
 
     # 基本的SQL注入模式
     SQL_PATTERNS = [
-        r'(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION)\b)',
-        r'(--|#|/\*|\*/)',
+        r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION)\b)",
+        r"(--|#|/\*|\*/)",
     ]
 
     @classmethod
@@ -81,7 +82,9 @@ class InputValidator:
         return False
 
     @classmethod
-    def validate_file_upload(cls, file_obj, allowed_types: List[str], max_size: int) -> None:
+    def validate_file_upload(
+        cls, file_obj, allowed_types: List[str], max_size: int
+    ) -> None:
         """
         验证文件上传
 
@@ -100,6 +103,7 @@ class InputValidator:
         # 检查文件类型
         if file_obj.content_type not in allowed_types:
             raise ValidationError(f"File type {file_obj.content_type} not allowed")
+
 
 class TokenGenerator:
     """令牌生成器"""
@@ -133,7 +137,8 @@ class TokenGenerator:
         # 清理过期记录
         if identifier in self.requests:
             self.requests[identifier] = [
-                req_time for req_time in self.requests[identifier]
+                req_time
+                for req_time in self.requests[identifier]
                 if req_time > window_start
             ]
         else:
@@ -153,6 +158,7 @@ class TokenGenerator:
             return self.max_requests
 
         return max(0, self.max_requests - len(self.requests[identifier]))
+
 
 class PasswordValidator:
     """密码验证器"""
@@ -183,17 +189,17 @@ class PasswordValidator:
             score += 1
 
         # 复杂度检查
-        if re.search(r'[a-z]', password):
+        if re.search(r"[a-z]", password):
             score += 1
         else:
             errors.append("Password must contain at least one lowercase letter")
 
-        if re.search(r'[A-Z]', password):
+        if re.search(r"[A-Z]", password):
             score += 1
         else:
             errors.append("Password must contain at least one uppercase letter")
 
-        if re.search(r'\d', password):
+        if re.search(r"\d", password):
             score += 1
         else:
             errors.append("Password must contain at least one digit")
@@ -205,8 +211,15 @@ class PasswordValidator:
 
         # 常见密码检查
         common_passwords = [
-            'password', '123456', 'password123', 'admin', 'qwerty',
-            '12345678', '123456789', 'password1', 'abc123'
+            "password",
+            "123456",
+            "password123",
+            "admin",
+            "qwerty",
+            "12345678",
+            "123456789",
+            "password1",
+            "abc123",
         ]
 
         if password.lower() in common_passwords:
@@ -222,28 +235,33 @@ class PasswordValidator:
             strength = "weak"
 
         return {
-            'is_valid': len(errors) == 0,
-            'errors': errors,
-            'strength': strength,
-            'score': score
+            "is_valid": len(errors) == 0,
+            "errors": errors,
+            "strength": strength,
+            "score": score,
         }
 
     @classmethod
     def hash_password(cls, password: str) -> str:
         """哈希密码"""
         salt = secrets.token_hex(16)
-        password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000)
+        password_hash = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), salt.encode(), 100000
+        )
         return f"{salt}:{password_hash.hex()}"
 
     @classmethod
     def verify_password(cls, password: str, hashed_password: str) -> bool:
         """验证密码"""
         try:
-            salt, stored_hash = hashed_password.split(':')
-            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000)
+            salt, stored_hash = hashed_password.split(":")
+            password_hash = hashlib.pbkdf2_hmac(
+                "sha256", password.encode(), salt.encode(), 100000
+            )
             return secrets.compare_digest(password_hash.hex(), stored_hash)
         except ValueError:
             return False
+
 
 class SecurityHeaders:
     """安全头管理"""
@@ -252,11 +270,11 @@ class SecurityHeaders:
     def get_security_headers() -> Dict[str, str]:
         """获取安全头"""
         return {
-            'X-Content-Type-Options': 'nosniff',
-            'X-Frame-Options': 'DENY',
-            'X-XSS-Protection': '1; mode=block',
-            'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Content-Security-Policy': (
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "X-XSS-Protection": "1; mode=block",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Content-Security-Policy": (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline'; "
                 "style-src 'self' 'unsafe-inline'; "
@@ -265,12 +283,13 @@ class SecurityHeaders:
                 "connect-src 'self' https:; "
                 "frame-ancestors 'none';"
             ),
-            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-            'Permissions-Policy': (
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "Permissions-Policy": (
                 "geolocation=(), microphone=(), camera=(), "
                 "payment=(), usb=(), magnetometer=(), gyroscope=()"
-            )
+            ),
         }
+
 
 # 全局安全验证器实例
 security_validator = SecurityValidator()

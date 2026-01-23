@@ -17,14 +17,17 @@ from loguru import logger
 from .exceptions import raise_if_not_found
 
 User = get_user_model()
-ModelType = TypeVar('ModelType', bound=models.Model)
+ModelType = TypeVar("ModelType", bound=models.Model)
+
 
 # 缓存超时时间常量
 class CacheTimeout:
     """缓存超时时间常量"""
-    SHORT = 300      # 5分钟
-    MEDIUM = 1800    # 30分钟
-    LONG = 3600      # 1小时
+
+    SHORT = 300  # 5分钟
+    MEDIUM = 1800  # 30分钟
+    LONG = 3600  # 1小时
+
 
 class BaseService(Generic[ModelType], ABC):
     """
@@ -52,8 +55,9 @@ class BaseService(Generic[ModelType], ABC):
         return cls.model
 
     @classmethod
-    def get_by_id(cls, obj_id: int, user: Optional[User] = None,
-                  check_permission: bool = True) -> ModelType:
+    def get_by_id(
+        cls, obj_id: int, user: Optional[User] = None, check_permission: bool = True
+    ) -> ModelType:
         """
         根据ID获取对象
 
@@ -98,7 +102,9 @@ class BaseService(Generic[ModelType], ABC):
         return queryset
 
     @classmethod
-    def search_objects(cls, query: str, user: Optional[User] = None) -> QuerySet[ModelType]:
+    def search_objects(
+        cls, query: str, user: Optional[User] = None
+    ) -> QuerySet[ModelType]:
         """
         搜索对象
 
@@ -269,8 +275,9 @@ class BaseService(Generic[ModelType], ABC):
 
     @classmethod
     @abstractmethod
-    def validate_update_data(cls, data: Dict[str, Any], obj: ModelType,
-                           user: User) -> Dict[str, Any]:
+    def validate_update_data(
+        cls, data: Dict[str, Any], obj: ModelType, user: User
+    ) -> Dict[str, Any]:
         """
         验证更新数据
 
@@ -290,8 +297,9 @@ class BaseService(Generic[ModelType], ABC):
     # 权限检查方法 - 子类可重写
 
     @classmethod
-    def filter_by_permission(cls, queryset: QuerySet[ModelType],
-                           user: User) -> QuerySet[ModelType]:
+    def filter_by_permission(
+        cls, queryset: QuerySet[ModelType], user: User
+    ) -> QuerySet[ModelType]:
         """
         根据权限过滤查询集
 
@@ -429,7 +437,7 @@ class BaseService(Generic[ModelType], ABC):
         Returns:
             str: 缓存键
         """
-        model_name = cls.get_model()._meta.label_lower.replace('.', '_')
+        model_name = cls.get_model()._meta.label_lower.replace(".", "_")
         return f"{model_name}_{prefix}_{'_'.join(map(str, args))}"
 
     @classmethod
@@ -441,7 +449,7 @@ class BaseService(Generic[ModelType], ABC):
             obj: 对象实例
         """
         # 清除详情缓存
-        cache_key = cls.get_cache_key('detail', obj.id)
+        cache_key = cls.get_cache_key("detail", obj.id)
         cache.delete(cache_key)
 
         # 清除列表缓存
@@ -453,6 +461,7 @@ class BaseService(Generic[ModelType], ABC):
         # 子类可重写以实现特定的缓存清理逻辑
         pass
 
+
 class CacheableService:
     """
     可缓存服务混入类
@@ -461,8 +470,9 @@ class CacheableService:
     """
 
     @classmethod
-    def get_cached_data(cls, cache_key: str, fetch_func: Callable,
-                       timeout: int = CacheTimeout.MEDIUM) -> Any:
+    def get_cached_data(
+        cls, cache_key: str, fetch_func: Callable, timeout: int = CacheTimeout.MEDIUM
+    ) -> Any:
         """
         获取缓存数据
 
@@ -505,7 +515,7 @@ class CacheableService:
             timeout: 缓存超时时间（秒），如果为None则使用默认超时时间
         """
         if timeout is None:
-            timeout = getattr(cls, 'cache_timeout', CacheTimeout.MEDIUM)
+            timeout = getattr(cls, "cache_timeout", CacheTimeout.MEDIUM)
         cache.set(cache_key, data, timeout)
 
     @classmethod
@@ -530,7 +540,9 @@ class CacheableService:
             cache.delete_pattern(pattern)
         except AttributeError:
             # 如果缓存后端不支持模式删除，则忽略
-            logger.warning(f"Cache backend does not support pattern deletion: {pattern}")
+            logger.warning(
+                f"Cache backend does not support pattern deletion: {pattern}"
+            )
 
     @classmethod
     def invalidate_cache(cls, cache_key: str) -> None:
@@ -557,7 +569,10 @@ class CacheableService:
             cache.delete_pattern(pattern)
         except AttributeError:
             # 如果缓存后端不支持模式删除，则忽略
-            logger.warning(f"Cache backend does not support pattern deletion: {pattern}")
+            logger.warning(
+                f"Cache backend does not support pattern deletion: {pattern}"
+            )
+
 
 class SimpleService:
     """
@@ -579,12 +594,15 @@ class SimpleService:
             cache.delete_pattern(pattern)
         except AttributeError:
             # 如果缓存后端不支持模式删除，则忽略
-            logger.warning(f"Cache backend does not support pattern deletion: {pattern}")
+            logger.warning(
+                f"Cache backend does not support pattern deletion: {pattern}"
+            )
+
 
 __all__ = [
-    'BaseService',
-    'CacheableService',
-    'SimpleService',
-    'CacheTimeout',
-    'ModelType',
+    "BaseService",
+    "CacheableService",
+    "SimpleService",
+    "CacheTimeout",
+    "ModelType",
 ]

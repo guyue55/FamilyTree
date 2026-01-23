@@ -16,6 +16,7 @@ from .models import Family, FamilyInvitation
 
 User = get_user_model()
 
+
 @shared_task(bind=True, max_retries=3)
 def send_family_invitation_email(self, invitation_id: int):
     """
@@ -32,7 +33,9 @@ def send_family_invitation_email(self, invitation_id: int):
         family = invitation.family
 
         # 构建邀请链接
-        invitation_url = f"{settings.FRONTEND_URL}/invitations/{invitation.invitation_code}"
+        invitation_url = (
+            f"{settings.FRONTEND_URL}/invitations/{invitation.invitation_code}"
+        )
 
         # 构建邮件内容
         subject = f"您收到了来自{family.name}的家族邀请"
@@ -46,14 +49,14 @@ def send_family_invitation_email(self, invitation_id: int):
 邀请详情：
 - 家族名称：{family.name}
 - 邀请码：{invitation.invitation_code}
-- 过期时间：{invitation.expires_at.strftime('%Y-%m-%d %H:%M:%S')}
+- 过期时间：{invitation.expires_at.strftime("%Y-%m-%d %H:%M:%S")}
 
 请点击以下链接接受邀请：
 {invitation_url}
 
 如果您无法点击链接，请复制以上链接到浏览器地址栏中打开。
 
-此邀请将在 {invitation.expires_at.strftime('%Y-%m-%d %H:%M:%S')} 过期。
+此邀请将在 {invitation.expires_at.strftime("%Y-%m-%d %H:%M:%S")} 过期。
 
 感谢您的使用！
 
@@ -66,29 +69,32 @@ def send_family_invitation_email(self, invitation_id: int):
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.invitee_email],
-            fail_silently=False
+            fail_silently=False,
         )
 
         logger.info(f"Invitation email sent: invitation_id={invitation_id}")
         return {
-            'success': True,
-            'invitation_id': invitation_id,
-            'email': invitation.invitee_email
+            "success": True,
+            "invitation_id": invitation_id,
+            "email": invitation.invitee_email,
         }
 
     except FamilyInvitation.DoesNotExist:
         logger.error(f"Invitation not found: id={invitation_id}")
-        return {'success': False, 'error': 'Invitation not found'}
+        return {"success": False, "error": "Invitation not found"}
 
     except Exception as e:
         logger.error(f"Failed to send invitation email: {e}")
 
         # 重试机制
         if self.request.retries < self.max_retries:
-            logger.info(f"Retrying invitation email: attempt {self.request.retries + 1}")
-            raise self.retry(countdown=60 * (2 ** self.request.retries))
+            logger.info(
+                f"Retrying invitation email: attempt {self.request.retries + 1}"
+            )
+            raise self.retry(countdown=60 * (2**self.request.retries))
 
-        return {'success': False, 'error': str(e)}
+        return {"success": False, "error": str(e)}
+
 
 @shared_task
 def send_family_welcome_email(user_id: int, family_id: int):
@@ -138,23 +144,20 @@ def send_family_welcome_email(user_id: int, family_id: int):
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False
+            fail_silently=False,
         )
 
         logger.info(f"Welcome email sent: user_id={user_id}, family_id={family_id}")
-        return {
-            'success': True,
-            'user_id': user_id,
-            'family_id': family_id
-        }
+        return {"success": True, "user_id": user_id, "family_id": family_id}
 
     except (User.DoesNotExist, Family.DoesNotExist) as e:
         logger.error(f"User or family not found: {e}")
-        return {'success': False, 'error': 'User or family not found'}
+        return {"success": False, "error": "User or family not found"}
 
     except Exception as e:
         logger.error(f"Failed to send welcome email: {e}")
-        return {'success': False, 'error': str(e)}
+        return {"success": False, "error": str(e)}
+
 
 @shared_task
 def cleanup_expired_invitations():
@@ -167,21 +170,17 @@ def cleanup_expired_invitations():
     try:
         # 查找过期的待处理邀请
         expired_invitations = FamilyInvitation.objects.filter(
-            status='pending',
-            expires_at__lt=timezone.now()
+            status="pending", expires_at__lt=timezone.now()
         )
 
         count = expired_invitations.count()
 
         # 批量更新状态
-        expired_invitations.update(status='expired')
+        expired_invitations.update(status="expired")
 
         logger.info(f"Cleaned up {count} expired invitations")
-        return {
-            'success': True,
-            'cleaned_count': count
-        }
+        return {"success": True, "cleaned_count": count}
 
     except Exception as e:
         logger.error(f"Failed to cleanup expired invitations: {e}")
-        return {'success': False, 'error': str(e)}
+        return {"success": False, "error": str(e)}
