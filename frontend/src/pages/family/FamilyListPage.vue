@@ -41,13 +41,14 @@ const fetchFamilies = async () => {
   try {
     const { listPublicFamilies } = await import('@/api/family')
     const { items } = await listPublicFamilies({ page: 1, page_size: 20, search: query.value })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     families.value = items.map((f: any) => ({
       id: Number(f.id),
       name: String(f.name),
       memberCount: Number(f.member_count || 0),
       generationCount: Number(f.generation_count || 1)
     }))
-  } catch (e) {
+  } catch {
     error.value = '加载家族列表失败'
   } finally {
     loading.value = false

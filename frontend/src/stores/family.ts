@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { FamilyMember, Family } from '@/types/family'
 
 export interface FilterOptions {
@@ -9,7 +9,30 @@ export interface FilterOptions {
   searchQuery: string
 }
 
+// 本地存储键名
+const STORAGE_KEY = 'family-tree-preferences'
+
+// 默认配置
+const DEFAULT_PREFERENCES = {
+  relationshipsVisible: false,
+  showPhotos: true,
+  showDates: true,
+  showGeneration: true
+}
+
 export const useFamilyStore = defineStore('family', () => {
+  // 加载本地配置
+  const loadPreferences = () => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return stored ? { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) } : DEFAULT_PREFERENCES
+    } catch {
+      return DEFAULT_PREFERENCES
+    }
+  }
+
+  const prefs = loadPreferences()
+
   // 状态
   const currentFamily = ref<Family | null>(null)
   const familyMembers = ref<FamilyMember[]>([])
@@ -19,11 +42,28 @@ export const useFamilyStore = defineStore('family', () => {
   
   // 界面状态
   const sidebarCollapsed = ref(false)
-  const relationshipsVisible = ref(false)
+  const relationshipsVisible = ref(prefs.relationshipsVisible)
   const zoomLevel = ref(1)
-  const showPhotos = ref(true)
-  const showDates = ref(true)
-  const showGeneration = ref(true)
+  const showPhotos = ref(prefs.showPhotos)
+  const showDates = ref(prefs.showDates)
+  const showGeneration = ref(prefs.showGeneration)
+  
+  // 监听并保存配置
+  watch(
+    [relationshipsVisible, showPhotos, showDates, showGeneration],
+    () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          relationshipsVisible: relationshipsVisible.value,
+          showPhotos: showPhotos.value,
+          showDates: showDates.value,
+          showGeneration: showGeneration.value
+        }))
+      } catch (e) {
+        console.warn('Failed to save preferences:', e)
+      }
+    }
+  )
   
   // 筛选器状态
   const filters = ref<FilterOptions>({
@@ -105,34 +145,73 @@ export const useFamilyStore = defineStore('family', () => {
     selectedMember.value = member
   }
 
-  const updateMember = (member: FamilyMember) => {
-    const index = familyMembers.value.findIndex(m => m.id === member.id)
-    if (index !== -1) {
-      familyMembers.value[index] = member
+  const updateMember = async (member: FamilyMember) => {
+    try {
+      loading.value = true
+      const { updateMember: apiUpdateMember } = await import('@/api/members')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await apiUpdateMember(member.id, member as any)
+      
+      const index = familyMembers.value.findIndex(m => m.id === member.id)
+      if (index !== -1 && res) {
+        // 更新本地状态
+        familyMembers.value[index] = { ...member, ...res }
+      }
+      return res
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Update failed'
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
-  const deleteMember = (memberId: string) => {
-    familyMembers.value = familyMembers.value.filter(m => m.id !== memberId)
+  const deleteMember = async (memberId: string) => {
+    try {
+      loading.value = true
+      const { deleteMember: apiDeleteMember } = await import('@/api/members')
+      await apiDeleteMember(memberId)
+      
+      familyMembers.value = familyMembers.value.filter(m => m.id !== memberId)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Delete failed'
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
-  const addMember = (member: Omit<FamilyMember, 'id'>) => {
-    const newMember: FamilyMember = {
-      ...member,
-      id: Date.now().toString()
+  const addMember = async (member: Omit<FamilyMember, 'id'>) => {
+    try {
+      loading.value = true
+      const { createMember: apiCreateMember } = await import('@/api/members')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await apiCreateMember(member as any)
+      
+      if (res) {
+        const newMember: FamilyMember = {
+          ...member,
+          id: String(res.id || Date.now()),
+          ...res
+        }
+        familyMembers.value.push(newMember)
+        return newMember
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Create failed'
+      throw err
+    } finally {
+      loading.value = false
     }
-    familyMembers.value.push(newMember)
-    return newMember
   }
 
   const loadMembers = async (familyId?: number) => {
     try {
       if (!familyId && currentFamily.value) familyId = currentFamily.value.id
       if (!familyId) return []
-      const { ensureAuthToken } = await import('@/api/auth')
-      await ensureAuthToken()
       const { getFamilyMembersFlat } = await import('@/api/members')
       const data = await getFamilyMembersFlat(familyId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped = (data || []).map((m: any) => ({
         id: String(m.id),
         familyId: Number(m.familyId),
@@ -143,11 +222,12 @@ export const useFamilyStore = defineStore('family', () => {
         generation: Number(m.generation) || 1,
         parentId: m.parentId ? String(m.parentId) : null,
         spouseId: m.spouseId ? String(m.spouseId) : null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: Array.isArray(m.children) ? m.children.map((c: any) => String(c)) : []
       })) as FamilyMember[]
       familyMembers.value = mapped
       return mapped
-    } catch (e) {
+    } catch {
       return []
     }
   }

@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 const query = ref('')
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const results = ref<any[]>([])
 const from = ref('我')
 const to = ref('他')

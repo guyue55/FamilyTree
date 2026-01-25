@@ -20,3 +20,13 @@ export interface Family {
   createdAt: string
   updatedAt: string
 }
+
+// 族谱图组件使用的类型定义
+export type MemberGroup = 
+  | { id: string; type: 'couple'; members: FamilyMember[] }
+  | { id: string; type: 'single'; member: FamilyMember }
+
+export interface GenerationGroup {
+  level: number
+  groups: MemberGroup[]
+}

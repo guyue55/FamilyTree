@@ -1,13 +1,13 @@
 import axios from 'axios'
 
-const base = (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.VITE_API_BASE) || '/api/v1'
+const base = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || '/api/v1'
 
 const client = axios.create({
   baseURL: base,
   timeout: 15000
 })
 
-if ((typeof import.meta !== 'undefined' && (import.meta as any)?.env?.DEV)) {
+if ((typeof import.meta !== 'undefined' && import.meta.env?.DEV)) {
   console.log('API base URL:', base)
 }
 

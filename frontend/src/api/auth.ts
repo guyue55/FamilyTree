@@ -18,7 +18,7 @@ export async function register(user: {
 }
 
 export async function ensureAuthToken() {
-  let token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token')
   if (token) return token
   const devUser = {
     username: 'devuser',
@@ -34,7 +34,9 @@ export async function ensureAuthToken() {
       localStorage.setItem('access_token', loginResp.access_token)
       return loginResp.access_token
     }
-  } catch {}
+  } catch {
+    // Ignore login error
+  }
   try {
     await register(devUser)
     const loginResp = await login(devUser.username, devUser.password)
@@ -42,6 +44,8 @@ export async function ensureAuthToken() {
       localStorage.setItem('access_token', loginResp.access_token)
       return loginResp.access_token
     }
-  } catch {}
+  } catch {
+    // Ignore register/login error
+  }
   return null
 }

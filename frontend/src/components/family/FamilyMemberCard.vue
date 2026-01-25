@@ -12,7 +12,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 
 interface FamilyMember {
   id: string
@@ -23,7 +22,7 @@ interface FamilyMember {
   generation: number
 }
 
-const props = defineProps<{
+defineProps<{
   member: FamilyMember
   isSelected?: boolean
 }>()

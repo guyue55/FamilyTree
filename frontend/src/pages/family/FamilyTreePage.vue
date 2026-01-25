@@ -5,8 +5,8 @@
       <div class="header-left">
         <button 
           class="back-btn" 
-          @click="goBack"
           title="返回"
+          @click="goBack"
         >
           ←
         </button>
@@ -71,16 +71,6 @@
         </div>
         
         <el-button 
-          type="primary"
-          size="small"
-          :class="{ 'relationship-toggle': true, active: familyStore.relationshipsVisible }"
-          @click="familyStore.toggleRelationships()"
-        >
-          <el-icon><Connection /></el-icon>
-          {{ familyStore.relationshipsVisible ? '隐藏关系' : '显示关系' }}
-        </el-button>
-        
-        <el-button 
           size="small"
           @click="openRelationshipQuery"
         >
@@ -117,13 +107,13 @@
         </div>
         
         <el-button-group>
-          <el-button size="small" @click="fitToScreen" title="适应屏幕">
+          <el-button size="small" title="适应屏幕" @click="fitToScreen">
             <el-icon><FullScreen /></el-icon>
           </el-button>
-          <el-button size="small" @click="centerGraph" title="居中显示">
+          <el-button size="small" title="居中显示" @click="centerGraph">
             <el-icon><Aim /></el-icon>
           </el-button>
-          <el-button size="small" @click="toggleFullscreen" title="全屏">
+          <el-button size="small" title="全屏" @click="toggleFullscreen">
             <el-icon><ScaleToOriginal /></el-icon>
           </el-button>
         </el-button-group>
@@ -139,13 +129,13 @@
       >
         <button 
           class="sidebar-toggle" 
-          @click="familyStore.toggleSidebar()"
           :title="familyStore.sidebarCollapsed ? '展开' : '收起'"
+          @click="familyStore.toggleSidebar()"
         >
           {{ familyStore.sidebarCollapsed ? '▶' : '◀' }}
         </button>
         
-        <div class="sidebar-header" v-if="!familyStore.sidebarCollapsed">
+        <div v-if="!familyStore.sidebarCollapsed" class="sidebar-header">
           <!-- 族谱信息卡片 -->
           <div class="family-info-card">
             <h2 class="family-name">
@@ -172,7 +162,7 @@
           </div>
         </div>
         
-        <div class="sidebar-content" v-if="!familyStore.sidebarCollapsed">
+        <div v-if="!familyStore.sidebarCollapsed" class="sidebar-content">
           <!-- 筛选器 -->
           <div class="filters-section">
             <h3 class="section-title">
@@ -185,7 +175,7 @@
               <el-radio-group 
                 v-model="familyStore.filters.gender" 
                 size="small"
-                @change="(value) => familyStore.setFilter('gender', value)"
+                @change="(value) => familyStore.setFilter('gender', value as 'male' | 'female' | 'all')"
               >
                 <el-radio-button 
                   v-for="option in genderOptions" 
@@ -202,7 +192,7 @@
               <el-radio-group 
                 v-model="familyStore.filters.status" 
                 size="small"
-                @change="(value) => familyStore.setFilter('status', value)"
+                @change="(value) => familyStore.setFilter('status', value as 'all' | 'alive' | 'deceased')"
               >
                 <el-radio-button 
                   v-for="option in statusOptions" 
@@ -268,7 +258,6 @@
                 <div class="member-content">
                   <el-avatar 
                     :size="40"
-                    :src="member.photo"
                     class="member-avatar"
                   >
                     {{ member.name.charAt(0) }}
@@ -289,16 +278,16 @@
                     <el-button 
                       type="text"
                       size="small"
-                      @click.stop="editMember(member)"
                       title="编辑"
+                      @click.stop="editMember(member)"
                     >
                       <el-icon><Edit /></el-icon>
                     </el-button>
                     <el-button 
                       type="text"
                       size="small"
-                      @click.stop="deleteMember(member.id)"
                       title="删除"
+                      @click.stop="deleteMember(member.id)"
                     >
                       <el-icon><Delete /></el-icon>
                     </el-button>
@@ -312,26 +301,29 @@
 
       <!-- 图形区域 -->
       <div class="graph-area">
-        <div class="graph-container" ref="graphContainer">
-          <FamilyGraphComponent 
+<div ref="graphContainer" class="graph-container">
+          <EnhancedFamilyGraph 
             ref="graphRef"
             :members="familyStore.filteredMembers"
-            :zoom-level="familyStore.zoomLevel"
             :show-relationships="familyStore.relationshipsVisible"
             :show-photos="familyStore.showPhotos"
             :show-dates="familyStore.showDates"
             :show-generation="familyStore.showGeneration"
-            @member-click="selectMember"
-            @member-edit="editMember"
+            v-model:zoomLevel="familyStore.zoomLevel"
+            @node-click="selectMember"
+            @node-edit="editMember"
+            @add-member="handleAddMember"
+            @export="handleExport"
+            @update-options="handleUpdateOptions"
           />
         </div>
       </div>
     </main>
 
-    <!-- 添加成员对话框 -->
+    <!-- 添加/编辑成员对话框 -->
     <el-dialog 
       v-model="showAddMemberDialog" 
-      title="添加家族成员" 
+      :title="isEditing ? '编辑成员' : '添加家族成员'" 
       width="600px"
       :before-close="handleCloseAddDialog"
     >
@@ -428,30 +420,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useFamilyStore } from '@/stores/family'
 import type { FamilyMember } from '@/types/family'
-import FamilyGraphComponent from '@/components/family/FamilyGraphComponent.vue'
+import EnhancedFamilyGraph from '@/components/family/EnhancedFamilyGraph.vue'
 import {
-  ArrowLeft,
-  Setting,
-  Share,
   Plus,
   Search,
   Connection,
-  Minus,
   FullScreen,
   Aim,
   Filter,
   User,
-  Operation as TreeIcon,
   ZoomOut,
   ZoomIn,
   ScaleToOriginal,
   Edit,
   Delete
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
@@ -460,6 +448,8 @@ const familyStore = useFamilyStore()
 
 // 响应式数据
 const showAddMemberDialog = ref(false)
+const isEditing = ref(false)
+const currentMemberId = ref<string>('')
 const addMemberFormRef = ref<FormInstance>()
 const graphContainer = ref<HTMLElement>()
 const graphRef = ref()
@@ -537,18 +527,44 @@ const selectMember = (member: FamilyMember) => {
 }
 
 const editMember = (member: FamilyMember) => {
-  // TODO: 实现编辑成员功能
-  console.log('编辑成员:', member)
+  isEditing.value = true
+  currentMemberId.value = member.id
+  newMember.value = {
+    familyId: member.familyId,
+    name: member.name,
+    gender: member.gender,
+    birthDate: member.birthDate || '',
+    deathDate: member.deathDate || '',
+    generation: member.generation,
+    parentId: member.parentId || '',
+    spouseId: member.spouseId || '',
+    children: [...(member.children || [])]
+  }
+  showAddMemberDialog.value = true
 }
 
-const getInitial = (name: string) => {
-  return name.charAt(0)
-}
-
-const formatDateRange = (birthDate?: string | null, deathDate?: string | null) => {
-  const birth = birthDate ? new Date(birthDate).getFullYear() : '?'
-  const death = deathDate ? new Date(deathDate).getFullYear() : ''
-  return death ? `${birth}-${death}` : `${birth}-`
+const deleteMember = (id: string) => {
+  ElMessageBox.confirm(
+    '确定要删除该成员吗？此操作不可恢复。',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(async () => {
+      try {
+        await familyStore.deleteMember(id)
+        ElMessage.success('删除成功')
+      } catch (error) {
+        ElMessage.error('删除失败')
+        console.error(error)
+      }
+    })
+    .catch(() => {
+      // cancel
+    })
 }
 
 const handleSearch = (query: string) => {
@@ -559,17 +575,7 @@ const handleGenerationChange = (generation: number | 'all') => {
   familyStore.setFilter('generation', generation === 'all' ? undefined : generation)
 }
 
-const handleExport = async (format: string) => {
-  if (format !== 'png') return
-  const el = graphContainer.value
-  if (!el) return
-  const { default: html2canvas } = await import('html2canvas')
-  const canvas = await html2canvas(el as HTMLElement, { useCORS: true, scale: 2 })
-  const link = document.createElement('a')
-  link.href = canvas.toDataURL('image/png')
-  link.download = 'family-tree.png'
-  link.click()
-}
+
 
 const fitToScreen = () => {
   graphRef.value?.fitToScreen?.()
@@ -582,11 +588,10 @@ const centerGraph = () => {
 const toggleFullscreen = () => {
   const el = graphContainer.value
   if (!el) return
-  const d: any = document
-  if (!d.fullscreenElement) {
+  if (!document.fullscreenElement) {
     el.requestFullscreen?.()
   } else {
-    d.exitFullscreen?.()
+    document.exitFullscreen?.()
   }
 }
 
@@ -605,6 +610,12 @@ const openRelationshipQuery = () => {
   console.log('称呼查询')
 }
 
+const handleExport = (format: string) => {
+  if (graphRef.value) {
+    graphRef.value.exportAsImage(format)
+  }
+}
+
 const handleAddMember = async () => {
   if (!addMemberFormRef.value) return
   
@@ -620,11 +631,24 @@ const handleAddMember = async () => {
       spouseId: newMember.value.spouseId || null
     }
     
-    familyStore.addMember(memberData)
+    if (isEditing.value && currentMemberId.value) {
+      // 更新现有成员
+      await familyStore.updateMember({
+        ...memberData,
+        id: currentMemberId.value
+      } as FamilyMember)
+      ElMessage.success('更新成员成功')
+    } else {
+      // 添加新成员
+      await familyStore.addMember(memberData)
+      ElMessage.success('添加成员成功')
+    }
+    
     showAddMemberDialog.value = false
     resetForm()
   } catch (error) {
-    console.error('添加成员失败:', error)
+    console.error(isEditing.value ? '更新成员失败:' : '添加成员失败:', error)
+    ElMessage.error(isEditing.value ? '更新成员失败' : '添加成员失败')
   }
 }
 
@@ -634,6 +658,8 @@ const handleCloseAddDialog = () => {
 }
 
 const resetForm = () => {
+  isEditing.value = false
+  currentMemberId.value = ''
   newMember.value = {
     familyId: 1,
     name: '',
@@ -646,6 +672,18 @@ const resetForm = () => {
     children: []
   }
   addMemberFormRef.value?.resetFields()
+}
+
+const handleUpdateOptions = (options: { relationships?: boolean, photos?: boolean, dates?: boolean, generation?: boolean }) => {
+  if (options.relationships !== undefined) familyStore.toggleRelationships() // 注意：store 的 toggle 只是取反，这里最好直接 set
+  // 由于 store 目前只有 toggle 方法，且 toggle 是取反 current value，
+  // 而 options.relationships 是最新值。
+  // 如果 store.value !== options.value，则 toggle。
+  if (options.relationships !== undefined && familyStore.relationshipsVisible !== options.relationships) familyStore.toggleRelationships()
+  
+  if (options.photos !== undefined && familyStore.showPhotos !== options.photos) familyStore.togglePhotos()
+  if (options.dates !== undefined && familyStore.showDates !== options.dates) familyStore.toggleDates()
+  if (options.generation !== undefined && familyStore.showGeneration !== options.generation) familyStore.toggleGenerationDisplay()
 }
 
 // 生命周期
