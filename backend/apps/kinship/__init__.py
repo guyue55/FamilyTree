@@ -1,0 +1,3 @@
+"""
+Kinship module initialization
+"""

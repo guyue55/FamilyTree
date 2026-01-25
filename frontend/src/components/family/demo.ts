@@ -230,12 +230,16 @@ function addControlButtons(graphEngine: ReturnType<typeof createFamilyGraph>, la
   
   const exportBtn = document.createElement('button')
   exportBtn.textContent = '导出PNG'
-  exportBtn.onclick = () => {
-    const dataURL = graphEngine.exportAsImage('png')
-    const link = document.createElement('a')
-    link.href = dataURL
-    link.download = `family-tree-${layoutIndex}.png`
-    link.click()
+  exportBtn.onclick = async () => {
+    try {
+      const dataURL = await graphEngine.exportAsImage('png')
+      const link = document.createElement('a')
+      link.href = dataURL
+      link.download = `family-tree-${layoutIndex}.png`
+      link.click()
+    } catch (error) {
+      console.error('Export failed:', error)
+    }
   }
   
   controlsContainer.appendChild(zoomInBtn)

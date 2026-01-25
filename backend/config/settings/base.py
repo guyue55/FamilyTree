@@ -40,6 +40,7 @@ LOCAL_APPS = [
     "apps.family",  # 家族管理
     "apps.members",  # 成员管理
     "apps.relationships",  # 关系管理
+    "apps.kinship",  # 亲属称呼计算
     "apps.media",  # 媒体文件
     "apps.common",  # 公共模块
 ]

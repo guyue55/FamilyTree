@@ -119,6 +119,13 @@ def create_api_v1() -> NinjaAPI:
             pass
 
         try:
+            from apps.kinship.api import router as kinship_router
+
+            api.add_router("/kinship", kinship_router, tags=["Kinship"])
+        except (ImportError, Exception):
+            pass
+
+        try:
             from apps.media.api import media_controller
 
             api.add_router("/media", media_controller.router, tags=["Media"])

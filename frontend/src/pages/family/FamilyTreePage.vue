@@ -3,13 +3,14 @@
     <!-- 页面头部 -->
     <header class="page-header">
       <div class="header-left">
-        <button 
+        <el-button 
+          link
           class="back-btn" 
           title="返回"
           @click="goBack"
         >
-          ←
-        </button>
+          <el-icon :size="20"><Back /></el-icon>
+        </el-button>
         <h1 class="page-title">
           <span class="title-icon">🌳</span>
           {{ familyStore.currentFamily?.name || '族谱' }}
@@ -17,18 +18,18 @@
       </div>
       
       <div class="header-right">
-        <button class="header-btn" @click="openSettings">
-          <span>⚙️</span>
+        <el-button @click="openSettings">
+          <el-icon class="el-icon--left"><Setting /></el-icon>
           设置
-        </button>
-        <button class="header-btn" @click="shareFamily">
-          <span>📤</span>
+        </el-button>
+        <el-button @click="shareFamily">
+          <el-icon class="el-icon--left"><Share /></el-icon>
           分享
-        </button>
-        <button class="header-btn primary" @click="showAddMemberDialog = true">
-          <span>➕</span>
+        </el-button>
+        <el-button type="primary" @click="showAddMemberDialog = true">
+          <el-icon class="el-icon--left"><Plus /></el-icon>
           添加成员
-        </button>
+        </el-button>
       </div>
     </header>
 
@@ -320,6 +321,9 @@
       </div>
     </main>
 
+    <!-- 功能对话框 - 移至底部统一管理 -->
+
+
     <!-- 添加/编辑成员对话框 -->
     <el-dialog 
       v-model="showAddMemberDialog" 
@@ -416,6 +420,22 @@
         <el-button type="primary" @click="handleAddMember">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 功能对话框 -->
+    <ShareDialog 
+      v-model="showShareDialog" 
+      @export="handleExport"
+    />
+    
+    <SettingsDialog 
+      v-model="showSettingsDialog"
+      @reset-view="handleResetView" 
+    />
+    
+    <RelationshipQueryDialog 
+      v-model="showRelationshipQueryDialog"
+      :members="familyStore.familyMembers"
+    />
   </div>
 </template>
 
@@ -425,6 +445,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useFamilyStore } from '@/stores/family'
 import type { FamilyMember } from '@/types/family'
 import EnhancedFamilyGraph from '@/components/family/EnhancedFamilyGraph.vue'
+import ShareDialog from '@/components/family/ShareDialog.vue'
+import SettingsDialog from '@/components/family/SettingsDialog.vue'
+import RelationshipQueryDialog from '@/components/family/RelationshipQueryDialog.vue'
 import {
   Plus,
   Search,
@@ -437,7 +460,10 @@ import {
   ZoomIn,
   ScaleToOriginal,
   Edit,
-  Delete
+  Delete,
+  Setting,
+  Share,
+  Back
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -448,6 +474,9 @@ const familyStore = useFamilyStore()
 
 // 响应式数据
 const showAddMemberDialog = ref(false)
+const showShareDialog = ref(false)
+const showSettingsDialog = ref(false)
+const showRelationshipQueryDialog = ref(false)
 const isEditing = ref(false)
 const currentMemberId = ref<string>('')
 const addMemberFormRef = ref<FormInstance>()
@@ -596,23 +625,83 @@ const toggleFullscreen = () => {
 }
 
 const openSettings = () => {
-  // TODO: 实现设置功能
-  console.log('打开设置')
+  showSettingsDialog.value = true
 }
 
 const shareFamily = () => {
-  // TODO: 实现分享功能
-  console.log('分享家族')
+  showShareDialog.value = true
 }
 
 const openRelationshipQuery = () => {
-  // TODO: 实现称呼查询功能
-  console.log('称呼查询')
+  showRelationshipQueryDialog.value = true
 }
 
-const handleExport = (format: string) => {
-  if (graphRef.value) {
-    graphRef.value.exportAsImage(format)
+const handleResetView = () => {
+  familyStore.resetZoom()
+  centerGraph()
+  showSettingsDialog.value = false
+}
+
+const handleExport = async (format: string) => {
+  if (format === 'excel') {
+    // 导出 Excel (CSV)
+    try {
+      const members = familyStore.familyMembers
+      const headers = ['ID', '姓名', '性别', '世代', '出生日期', '逝世日期', '父亲ID', '配偶ID']
+      const rows = members.map(m => [
+        m.id,
+        m.name,
+        m.gender === 'male' ? '男' : '女',
+        m.generation,
+        m.birthDate || '',
+        m.deathDate || '',
+        m.parentId || '',
+        m.spouseId || ''
+      ])
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n')
+      
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `family-tree-export.csv`
+      link.click()
+      URL.revokeObjectURL(link.href)
+      ElMessage.success('导出成功')
+    } catch (error) {
+      console.error('Export excel failed:', error)
+      ElMessage.error('导出失败')
+    }
+  } else if (graphRef.value) {
+    // 导出图片
+    try {
+      // 如果 format 是 base64 数据 URL（从 EnhancedFamilyGraph 传来的），直接下载
+      if (format.startsWith('data:')) {
+        const link = document.createElement('a')
+        link.href = format
+        // 猜测文件类型
+        let ext = 'png'
+        if (format.startsWith('data:image/svg')) ext = 'svg'
+        else if (format.startsWith('data:application/pdf')) ext = 'pdf'
+        
+        link.download = `family-tree.${ext}`
+        link.click()
+        ElMessage.success('导出成功')
+        return
+      }
+      
+      // 否则触发组件导出
+      // 注意：这里需要处理 EnhancedFamilyGraph 导出后会再次触发 emit('export', dataURL)
+      // 所以我们调用 graphRef.value.exportAsImage 时，不需要在这里处理结果，
+      // 而是等待组件 emit 回来的数据（通过递归调用 handleExport）。
+      await graphRef.value.exportAsImage(format)
+    } catch (error) {
+      console.error('Export image failed:', error)
+      ElMessage.error('导出失败')
+    }
   }
 }
 
@@ -1069,8 +1158,12 @@ onMounted(async () => {
 }
 
 .back-btn {
-  width: 40px;
-  height: 40px;
+  margin-right: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.back-btn:hover {
+  color: var(--primary-color);
 }
 
 .page-title {

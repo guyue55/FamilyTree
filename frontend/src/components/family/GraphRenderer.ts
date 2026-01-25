@@ -17,7 +17,7 @@ export interface GraphRenderer {
   updateSelection(selectedIds: Set<string>): void
   updateRelationshipSelection(selectedIds: Set<string>): void
   render(scene: GraphScene): void
-  exportAsImage(format: 'png' | 'jpeg' | 'svg'): string
+  exportAsImage(format: 'png' | 'jpeg' | 'svg' | 'pdf'): Promise<string>
   getCanvas(): HTMLElement
   destroy(): void
   on(event: string, listener: Function): void
@@ -423,32 +423,84 @@ export class SVGRenderer implements GraphRenderer {
     return death ? `${birth}-${death}` : `${birth}-`
   }
   
-  exportAsImage(format: 'png' | 'jpeg' | 'svg' = 'png'): string {
+  async exportAsImage(format: 'png' | 'jpeg' | 'svg' | 'pdf' = 'png'): Promise<string> {
     if (format === 'svg') {
       const serializer = new XMLSerializer()
-      return serializer.serializeToString(this.svgElement)
+      const svgString = serializer.serializeToString(this.svgElement)
+      // 使用 base64 编码以避免字符编码问题
+      const base64 = btoa(unescape(encodeURIComponent(svgString)))
+      return `data:image/svg+xml;base64,${base64}`
     }
     
-    // 对于PNG/JPEG，需要转换为canvas
+    // 对于PNG/JPEG/PDF，需要转换为canvas
     const canvas = document.createElement('canvas')
-    canvas.width = this.width
-    canvas.height = this.height
+    // 增加分辨率以提高清晰度
+    const scale = 2
+    canvas.width = this.width * scale
+    canvas.height = this.height * scale
     const ctx = canvas.getContext('2d')!
+    ctx.scale(scale, scale)
     
     const img = new Image()
-    const svgString = new XMLSerializer().serializeToString(this.svgElement)
+    const serializer = new XMLSerializer()
+    const svgString = serializer.serializeToString(this.svgElement)
     const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     
-    return new Promise((resolve) => {
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0)
+    return new Promise((resolve, reject) => {
+      img.onload = async () => {
+        try {
+          // 绘制白色背景（防止透明背景变黑）
+          if (format === 'jpeg' || format === 'pdf') {
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
+          
+          ctx.drawImage(img, 0, 0)
+          URL.revokeObjectURL(url)
+          
+          if (format === 'pdf') {
+            // 动态导入 jsPDF
+            const { jsPDF } = await import('jspdf')
+            // 创建 PDF，默认 A4 纸，根据图片比例调整方向
+            const orientation = canvas.width > canvas.height ? 'l' : 'p'
+            const pdf = new jsPDF(orientation, 'mm', 'a4')
+            
+            const pageWidth = pdf.internal.pageSize.getWidth()
+            const pageHeight = pdf.internal.pageSize.getHeight()
+            
+            // 计算图片在 PDF 中的尺寸（保持比例）
+            const imgRatio = canvas.width / canvas.height
+            let imgWidth = pageWidth
+            let imgHeight = pageWidth / imgRatio
+            
+            if (imgHeight > pageHeight) {
+              imgHeight = pageHeight
+              imgWidth = pageHeight * imgRatio
+            }
+            
+            const x = (pageWidth - imgWidth) / 2
+            const y = (pageHeight - imgHeight) / 2
+            
+            // 将 canvas 转换为图片数据添加到 PDF
+            const imgData = canvas.toDataURL('image/png')
+            pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+            
+            // 返回 PDF 的 Data URL
+            resolve(pdf.output('datauristring'))
+          } else {
+            resolve(canvas.toDataURL(`image/${format}`))
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+      img.onerror = (error) => {
         URL.revokeObjectURL(url)
-        resolve(canvas.toDataURL(`image/${format}`))
+        reject(error)
       }
       img.src = url
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }) as any
+    })
   }
   
   getCanvas(): HTMLElement {

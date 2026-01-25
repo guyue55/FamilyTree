@@ -324,7 +324,7 @@ export class FamilyGraphEngine {
     })
   }
   
-  public exportAsImage(format: 'png' | 'jpeg' | 'svg' = 'png'): string {
+  public async exportAsImage(format: 'png' | 'jpeg' | 'svg' | 'pdf' = 'png'): Promise<string> {
     return this.renderer.exportAsImage(format)
   }
   

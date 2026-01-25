@@ -471,17 +471,18 @@ const centerGraph = () => {
 }
 
 // 导出
-const handleExport = (format: string) => {
+const handleExport = async (format: string) => {
   if (graphEngine) {
     try {
-      const dataURL = graphEngine.exportAsImage(format as 'png' | 'svg')
-      const link = document.createElement('a')
-      link.href = dataURL
-      link.download = `family-tree.${format}`
-      link.click()
-      emit('export', format)
+      loading.value = true
+      const dataURL = await graphEngine.exportAsImage(format as 'png' | 'svg' | 'pdf')
+      // 移除自动下载，将数据返回给父组件处理
+      emit('export', dataURL)
+      return dataURL
     } catch (error) {
       console.error('Export failed:', error)
+    } finally {
+      loading.value = false
     }
   }
 }
