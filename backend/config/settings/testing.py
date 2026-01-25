@@ -14,21 +14,21 @@ from .base import *
 DEBUG = False
 
 # 测试环境主机配置
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
 
 # 测试环境数据库配置（内存SQLite）
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
     }
 }
 
 # 测试环境缓存配置（本地内存）
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'test-cache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test-cache",
     }
 }
 
@@ -36,43 +36,43 @@ CACHES = {
 AUTH_PASSWORD_VALIDATORS = []
 
 # 测试环境邮件配置（内存后端）
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # 测试环境日志配置（静默）
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'null': {
-            'class': 'logging.NullHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "null": {
+            "class": "logging.NullHandler",
         },
     },
-    'root': {
-        'handlers': ['null'],
+    "root": {
+        "handlers": ["null"],
     },
-    'loggers': {
-        'django': {
-            'handlers': ['null'],
-            'propagate': False,
+    "loggers": {
+        "django": {
+            "handlers": ["null"],
+            "propagate": False,
         },
-        'apps': {
-            'handlers': ['null'],
-            'propagate': False,
+        "apps": {
+            "handlers": ["null"],
+            "propagate": False,
         },
     },
 }
 
 # 测试环境静态文件配置
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # 测试环境媒体文件配置
-MEDIA_ROOT = '/tmp/familytree_test_media'
+MEDIA_ROOT = "/tmp/familytree_test_media"
 
 # 测试环境安全配置（宽松）
 SECURE_SSL_REDIRECT = False
 SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False
-X_FRAME_OPTIONS = 'SAMEORIGIN'
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # 测试环境Session配置
 SESSION_COOKIE_SECURE = False
@@ -114,13 +114,13 @@ API_DEBUG = True
 
 # 测试数据库配置优化
 
-if 'test' in sys.argv:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-        'OPTIONS': {
-            'timeout': 20,
-        }
+if "test" in sys.argv:
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+        "OPTIONS": {
+            "timeout": 20,
+        },
     }
 
 # 测试环境JWT配置（短期有效）

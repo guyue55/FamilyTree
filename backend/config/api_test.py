@@ -17,7 +17,7 @@ import uuid
 import time
 
 if not settings.configured:
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.testing')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.testing")
     django.setup()
 
 User = get_user_model()
@@ -25,12 +25,14 @@ User = get_user_model()
 # 全局API客户端实例，避免重复创建
 _api_client = None
 
+
 def get_api_client():
     """获取API客户端单例"""
     global _api_client
     if _api_client is None:
         _api_client = TestClient(get_api_v1())
     return _api_client
+
 
 class APITestCase(TestCase):
     """API测试基类"""
@@ -47,17 +49,17 @@ class APITestCase(TestCase):
         unique_suffix = str(uuid.uuid4())[:8]
 
         default_data = {
-            'username': f'testuser_{unique_suffix}',
-            'email': f'test_{unique_suffix}@example.com',
-            'phone': f'1{unique_suffix[:2]}{unique_suffix[2:4]}{unique_suffix[4:6]}{unique_suffix[6:8]}',
-            'password': 'testpass123'
+            "username": f"testuser_{unique_suffix}",
+            "email": f"test_{unique_suffix}@example.com",
+            "phone": f"1{unique_suffix[:2]}{unique_suffix[2:4]}{unique_suffix[4:6]}{unique_suffix[6:8]}",
+            "password": "testpass123",
         }
         default_data.update(kwargs)
 
         # 确保phone字段符合格式要求（11位，以1开头）
-        if 'phone' in default_data and len(default_data['phone']) != 11:
+        if "phone" in default_data and len(default_data["phone"]) != 11:
             phone_suffix = str(uuid.uuid4().int)[:9]
-            default_data['phone'] = f'1{phone_suffix}'
+            default_data["phone"] = f"1{phone_suffix}"
 
         user = User.objects.create_user(**default_data)
         self.test_user = user
@@ -69,17 +71,14 @@ class APITestCase(TestCase):
             user = self.test_user or self.create_test_user()
 
         # 登录获取token
-        login_data = {
-            'username': user.username,
-            'password': 'testpass123'
-        }
+        login_data = {"username": user.username, "password": "testpass123"}
 
         # 使用相对路径，因为TestClient已经包含了API前缀
-        response = self.client.post('/auth/login', json=login_data)
+        response = self.client.post("/auth/login", json=login_data)
         self.assertEqual(response.status_code, 200)
 
         # 实际的API直接返回access_token，不是在data字段中
-        token = response.json()['access_token']
+        token = response.json()["access_token"]
         self.auth_token = token
         return token
 
@@ -88,10 +87,7 @@ class APITestCase(TestCase):
         if token is None:
             token = self.auth_token or self.authenticate_user()
 
-        return {
-            'Authorization': f'Bearer {token}',
-            'X-Request-ID': f'test_{self.id()}'
-        }
+        return {"Authorization": f"Bearer {token}", "X-Request-ID": f"test_{self.id()}"}
 
     def api_request(
         self,
@@ -99,90 +95,102 @@ class APITestCase(TestCase):
         url: str,
         data: Optional[Dict[str, Any]] = None,
         authenticated: bool = True,
-        **kwargs
+        **kwargs,
     ) -> Any:
         """发送API请求"""
-        if not url.startswith('/'):
+        if not url.startswith("/"):
             url = f"/{url.lstrip('/')}"
 
-        headers = kwargs.pop('headers', {})
+        headers = kwargs.pop("headers", {})
         if authenticated:
             headers.update(self.get_auth_headers())
 
         client_method = getattr(self.client, method.lower())
 
-        if data is not None and method.upper() in ['POST', 'PUT', 'PATCH']:
+        if data is not None and method.upper() in ["POST", "PUT", "PATCH"]:
             return client_method(url, json=data, headers=headers, **kwargs)
         else:
             return client_method(url, headers=headers, **kwargs)
 
-    def api_get(self, url: str, params: Optional[Dict[str, Any]] = None, **kwargs) -> Any:
+    def api_get(
+        self, url: str, params: Optional[Dict[str, Any]] = None, **kwargs
+    ) -> Any:
         """GET请求"""
         if params:
-            kwargs['params'] = params
-        return self.api_request('GET', url, **kwargs)
+            kwargs["params"] = params
+        return self.api_request("GET", url, **kwargs)
 
-    def api_post(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs) -> Any:
+    def api_post(
+        self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs
+    ) -> Any:
         """POST请求"""
-        return self.api_request('POST', url, data=data, **kwargs)
+        return self.api_request("POST", url, data=data, **kwargs)
 
     def api_put(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs) -> Any:
         """PUT请求"""
-        return self.api_request('PUT', url, data=data, **kwargs)
+        return self.api_request("PUT", url, data=data, **kwargs)
 
-    def api_patch(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs) -> Any:
+    def api_patch(
+        self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs
+    ) -> Any:
         """PATCH请求"""
-        return self.api_request('PATCH', url, data=data, **kwargs)
+        return self.api_request("PATCH", url, data=data, **kwargs)
 
     def api_delete(self, url: str, **kwargs) -> Any:
         """DELETE请求"""
-        return self.api_request('DELETE', url, **kwargs)
+        return self.api_request("DELETE", url, **kwargs)
 
-    def assert_api_success(self, response: Any, expected_code: int = 200) -> Dict[str, Any]:
+    def assert_api_success(
+        self, response: Any, expected_code: int = 200
+    ) -> Dict[str, Any]:
         """断言API成功响应"""
         self.assertEqual(response.status_code, expected_code)
 
         data = response.json()
-        self.assertIn('code', data)
-        self.assertIn('message', data)
-        self.assertIn('data', data)
-        self.assertIn('timestamp', data)
-        self.assertIn('request_id', data)
+        self.assertIn("code", data)
+        self.assertIn("message", data)
+        self.assertIn("data", data)
+        self.assertIn("timestamp", data)
+        self.assertIn("request_id", data)
 
-        self.assertEqual(data['code'], expected_code)
+        self.assertEqual(data["code"], expected_code)
         return data
 
     def assert_api_error(
         self,
         response: Any,
         expected_status: int = 400,
-        expected_code: Optional[int] = None
+        expected_code: Optional[int] = None,
     ) -> Dict[str, Any]:
         """断言API错误响应"""
         self.assertEqual(response.status_code, expected_status)
 
         data = response.json()
-        self.assertIn('code', data)
-        self.assertIn('message', data)
-        self.assertIn('timestamp', data)
-        self.assertIn('request_id', data)
+        self.assertIn("code", data)
+        self.assertIn("message", data)
+        self.assertIn("timestamp", data)
+        self.assertIn("request_id", data)
 
         if expected_code:
-            self.assertEqual(data['code'], expected_code)
+            self.assertEqual(data["code"], expected_code)
 
         return data
 
-    def assert_validation_error(self, response: Any, field: Optional[str] = None) -> Dict[str, Any]:
+    def assert_validation_error(
+        self, response: Any, field: Optional[str] = None
+    ) -> Dict[str, Any]:
         """断言验证错误响应"""
         data = self.assert_api_error(response, 422, 422)
 
-        self.assertIn('data', data)
-        self.assertIn('errors', data['data'])
+        self.assertIn("data", data)
+        self.assertIn("errors", data["data"])
 
         if field:
-            errors = data['data']['errors']
-            field_errors = [error for error in errors if error.get('field') == field]
-            self.assertTrue(len(field_errors) > 0, f"No validation error found for field: {field}")
+            errors = data["data"]["errors"]
+            field_errors = [error for error in errors if error.get("field") == field]
+            self.assertTrue(
+                len(field_errors) > 0, f"No validation error found for field: {field}"
+            )
 
         return data
 
@@ -190,27 +198,36 @@ class APITestCase(TestCase):
         """断言分页响应"""
         data = self.assert_api_success(response)
 
-        self.assertIn('data', data)
-        response_data = data['data']
+        self.assertIn("data", data)
+        response_data = data["data"]
 
-        self.assertIn('items', response_data)
-        self.assertIn('pagination', response_data)
+        self.assertIn("items", response_data)
+        self.assertIn("pagination", response_data)
 
-        pagination = response_data['pagination']
-        required_fields = ['page', 'page_size', 'total', 'pages', 'has_next', 'has_prev']
+        pagination = response_data["pagination"]
+        required_fields = [
+            "page",
+            "page_size",
+            "total",
+            "pages",
+            "has_next",
+            "has_prev",
+        ]
         for field in required_fields:
             self.assertIn(field, pagination)
 
         return data
 
-    def create_test_data(self, model_class, count: int = 1, **kwargs) -> Union[Any, list]:
+    def create_test_data(
+        self, model_class, count: int = 1, **kwargs
+    ) -> Union[Any, list]:
         """创建测试数据"""
         objects = []
         for i in range(count):
             data = kwargs.copy()
             # 为重复字段添加序号
             for key, value in data.items():
-                if isinstance(value, str) and '{i}' in value:
+                if isinstance(value, str) and "{i}" in value:
                     data[key] = value.format(i=i)
 
             obj = model_class.objects.create(**data)
@@ -218,25 +235,30 @@ class APITestCase(TestCase):
 
         return objects[0] if count == 1 else objects
 
+
 class APIPerformanceTestCase(APITestCase):
     """API性能测试基类"""
 
-    def assert_response_time(self, response: Any, max_time: Optional[float] = None) -> None:
+    def assert_response_time(
+        self, response: Any, max_time: Optional[float] = None
+    ) -> None:
         """断言响应时间"""
         if max_time is None:
             max_time = self.performance_threshold
 
         # 从响应头获取处理时间
-        process_time_header = response.get('X-Process-Time', '0s')
-        process_time = float(process_time_header.rstrip('s'))
+        process_time_header = response.get("X-Process-Time", "0s")
+        process_time = float(process_time_header.rstrip("s"))
 
         self.assertLessEqual(
             process_time,
             max_time,
-            f"Response time {process_time}s exceeds threshold {max_time}s"
+            f"Response time {process_time}s exceeds threshold {max_time}s",
         )
 
-    def benchmark_endpoint(self, method: str, url: str, iterations: int = 10) -> Dict[str, float]:
+    def benchmark_endpoint(
+        self, method: str, url: str, iterations: int = 10
+    ) -> Dict[str, float]:
         """基准测试端点"""
 
         times = []
@@ -249,8 +271,8 @@ class APIPerformanceTestCase(APITestCase):
             times.append(end_time - start_time)
 
         return {
-            'min': min(times),
-            'max': max(times),
-            'avg': sum(times) / len(times),
-            'total': sum(times)
+            "min": min(times),
+            "max": max(times),
+            "avg": sum(times) / len(times),
+            "total": sum(times),
         }

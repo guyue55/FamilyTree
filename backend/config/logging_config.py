@@ -14,6 +14,7 @@ from decouple import config
 from loguru import logger
 import threading
 
+
 class LoguruConfig:
     """Loguru日志配置类"""
 
@@ -25,9 +26,9 @@ class LoguruConfig:
             base_dir: 项目根目录
         """
         self.base_dir = base_dir
-        self.log_dir = base_dir / 'logs'
-        self.log_level = config('LOG_LEVEL', default='INFO')
-        self.debug_mode = config('DEBUG', default=False, cast=bool)
+        self.log_dir = base_dir / "logs"
+        self.log_level = config("LOG_LEVEL", default="INFO")
+        self.debug_mode = config("DEBUG", default=False, cast=bool)
 
         # 确保日志目录存在
         self.log_dir.mkdir(exist_ok=True)
@@ -57,7 +58,7 @@ class LoguruConfig:
                 colorize=True,
                 filter=self._add_request_id_filter,
                 backtrace=True,
-                diagnose=True
+                diagnose=True,
             )
         else:
             # 生产环境：简洁输出
@@ -71,7 +72,7 @@ class LoguruConfig:
                     "{message}"
                 ),
                 level=self.log_level,
-                filter=self._add_request_id_filter
+                filter=self._add_request_id_filter,
             )
 
         # 文件输出配置
@@ -98,7 +99,7 @@ class LoguruConfig:
             format=self._get_json_format(),
             filter=self._add_request_id_filter,
             enqueue=True,  # 异步写入
-            serialize=True  # JSON序列化
+            serialize=True,  # JSON序列化
         )
 
         # 调试日志（仅开发环境）
@@ -111,7 +112,7 @@ class LoguruConfig:
                 format=self._get_json_format(),
                 filter=self._add_request_id_filter,
                 enqueue=True,
-                serialize=True
+                serialize=True,
             )
 
     def _setup_error_handlers(self) -> None:
@@ -127,7 +128,7 @@ class LoguruConfig:
             enqueue=True,
             serialize=True,
             backtrace=True,
-            diagnose=True
+            diagnose=True,
         )
 
     def _setup_performance_handlers(self) -> None:
@@ -141,7 +142,7 @@ class LoguruConfig:
             format=self._get_json_format(),
             filter=lambda record: record["extra"].get("log_type") == "performance",
             enqueue=True,
-            serialize=True
+            serialize=True,
         )
 
     def _setup_audit_handlers(self) -> None:
@@ -155,7 +156,7 @@ class LoguruConfig:
             format=self._get_json_format(),
             filter=lambda record: record["extra"].get("log_type") == "audit",
             enqueue=True,
-            serialize=True
+            serialize=True,
         )
 
     def _get_json_format(self) -> str:
@@ -174,8 +175,8 @@ class LoguruConfig:
         """获取当前请求ID"""
         try:
             # 尝试从线程本地存储获取
-            local = getattr(threading.current_thread(), 'request_context', None)
-            if local and hasattr(local, 'request_id'):
+            local = getattr(threading.current_thread(), "request_context", None)
+            if local and hasattr(local, "request_id"):
                 return local.request_id
         except:
             pass
@@ -184,6 +185,7 @@ class LoguruConfig:
 
     def _setup_django_integration(self) -> None:
         """配置Django日志集成"""
+
         class InterceptHandler(logging.Handler):
             """拦截Django日志并转发给loguru"""
 
@@ -210,15 +212,20 @@ class LoguruConfig:
 
         # 禁用Django默认日志处理器
         for name in logging.root.manager.loggerDict:
-            if name.startswith('django'):
+            if name.startswith("django"):
                 logging.getLogger(name).handlers = []
                 logging.getLogger(name).propagate = True
+
 
 class RequestContextLogger:
     """请求上下文日志记录器"""
 
-    def __init__(self, request_id: str, user_id: Optional[int] = None,
-                 endpoint: Optional[str] = None):
+    def __init__(
+        self,
+        request_id: str,
+        user_id: Optional[int] = None,
+        endpoint: Optional[str] = None,
+    ):
         """
         初始化请求上下文日志记录器
 
@@ -228,12 +235,12 @@ class RequestContextLogger:
             endpoint: API端点
         """
         self.context = {
-            'request_id': request_id,
-            'user_id': user_id,
-            'endpoint': endpoint
+            "request_id": request_id,
+            "user_id": user_id,
+            "endpoint": endpoint,
         }
 
-    def bind_logger(self) -> 'logger':
+    def bind_logger(self) -> "logger":
         """绑定上下文到logger"""
         return logger.bind(**self.context)
 
@@ -260,22 +267,19 @@ class RequestContextLogger:
     def performance(self, message: str, duration: float, **kwargs) -> None:
         """记录性能日志"""
         self.bind_logger().bind(
-            log_type="performance",
-            duration=duration,
-            **kwargs
+            log_type="performance", duration=duration, **kwargs
         ).info(message)
 
     def audit(self, action: str, resource: str, **kwargs) -> None:
         """记录审计日志"""
         self.bind_logger().bind(
-            log_type="audit",
-            action=action,
-            resource=resource,
-            **kwargs
+            log_type="audit", action=action, resource=resource, **kwargs
         ).info(f"Audit: {action} on {resource}")
 
-def get_request_logger(request_id: str, user_id: Optional[int] = None,
-                      endpoint: Optional[str] = None) -> RequestContextLogger:
+
+def get_request_logger(
+    request_id: str, user_id: Optional[int] = None, endpoint: Optional[str] = None
+) -> RequestContextLogger:
     """
     获取请求上下文日志记录器
 
@@ -289,6 +293,7 @@ def get_request_logger(request_id: str, user_id: Optional[int] = None,
     """
     return RequestContextLogger(request_id, user_id, endpoint)
 
+
 def setup_logging(base_dir: Path) -> None:
     """
     设置项目日志配置
@@ -298,11 +303,12 @@ def setup_logging(base_dir: Path) -> None:
     """
     LoguruConfig(base_dir)
 
+
 # 导出常用的日志记录器
 __all__ = [
-    'LoguruConfig',
-    'RequestContextLogger',
-    'get_request_logger',
-    'setup_logging',
-    'logger'
+    "LoguruConfig",
+    "RequestContextLogger",
+    "get_request_logger",
+    "setup_logging",
+    "logger",
 ]
