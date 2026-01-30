@@ -94,6 +94,10 @@ v-model="showGeneration" active-text="世代"
           <el-icon><CheckIcon /></el-icon>
           选择成员
         </div>
+        <div class="context-menu-item" @click="handleContextMenuAction('kinship')">
+          <el-icon><ConnectionIcon /></el-icon>
+          查看亲戚称呼
+        </div>
         <div class="context-menu-divider"></div>
         <div class="context-menu-item danger" @click="handleContextMenuAction('delete')">
           <el-icon><DeleteIcon /></el-icon>
@@ -131,7 +135,8 @@ import {
   Edit as EditIcon,
   View as ViewIcon,
   Check as CheckIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Connection as ConnectionIcon
 } from '@element-plus/icons-vue'
 
 import { 
@@ -182,10 +187,13 @@ const emit = defineEmits<{
   nodeDoubleClick: [member: FamilyMember]
   nodeEdit: [member: FamilyMember]
   nodeSelect: [members: FamilyMember[]]
+  nodeView: [member: FamilyMember]
   addMember: []
+  deleteMember: [memberId: string]
   export: [format: string]
   'update:zoomLevel': [level: number]
   'update-options': [options: { relationships?: boolean, photos?: boolean, dates?: boolean, generation?: boolean }]
+  'view-kinship': [member: FamilyMember]
 }>()
 
 // 响应式数据
@@ -318,6 +326,14 @@ const setupEventListeners = () => {
 }
 
 const showContextMenu = (nodeId: string | null, position: { x: number, y: number }) => {
+  // 如果点击的是节点，自动选中该节点
+  if (nodeId && graphEngine) {
+    // 强制选中该节点，避免切换导致选中状态被取消
+    // 使用引擎的精确选中方法
+    // @ts-expect-error
+    graphEngine.selectMemberExact?.(nodeId) || graphEngine.selectMember(nodeId)
+  }
+
   contextMenu.value = {
     visible: true,
     x: position.x,
@@ -348,17 +364,25 @@ const handleContextMenuAction = (action: string) => {
     case 'view':
       if (targetNodeId) {
         const member = props.members.find(m => m.id === targetNodeId)
-        if (member) emit('nodeClick', member)
+        if (member) emit('nodeView', member)
       }
       break
     case 'select':
       if (targetNodeId && graphEngine) {
-        graphEngine.selectMember(targetNodeId, true)
+        // @ts-expect-error
+        graphEngine.selectMemberExact?.(targetNodeId) || graphEngine.selectMember(targetNodeId, true)
+      }
+      break
+    case 'kinship':
+      if (targetNodeId) {
+        const member = props.members.find(m => m.id === targetNodeId)
+        if (member) emit('view-kinship', member)
       }
       break
     case 'delete':
-      // TODO: 实现删除功能
-      console.log('Delete member:', targetNodeId)
+      if (targetNodeId) {
+        emit('deleteMember', targetNodeId)
+      }
       break
   }
   
@@ -492,6 +516,13 @@ const toggleKeyboardHelp = () => {
   showKeyboardHelp.value = !showKeyboardHelp.value
 }
 
+// 设置成员称呼
+const setMemberTitles = (titles: Record<string, string>) => {
+  if (graphEngine) {
+    graphEngine.setMemberTitles(titles)
+  }
+}
+
 // 监听数据变化
 watch(() => props.members, (newMembers) => {
   if (graphEngine) {
@@ -553,7 +584,14 @@ defineExpose({
   zoomIn,
   zoomOut,
   resetZoom,
-  exportAsImage: (format: string) => handleExport(format)
+  exportAsImage: (format: string) => handleExport(format),
+  setMemberTitles,
+  selectMemberExact: (id: string) => {
+    if (graphEngine) {
+      // @ts-expect-error
+      graphEngine.selectMemberExact?.(id) || graphEngine.selectMember(id)
+    }
+  }
 })
 </script>
 

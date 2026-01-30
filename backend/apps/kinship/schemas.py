@@ -32,6 +32,18 @@ class KinshipResponse(Schema):
     path_details: List[PathDetail]
 
 
+class BatchKinshipRequest(Schema):
+    """批量称呼计算请求"""
+    family_tree_id: int
+    from_member_id: str
+    dialect: str = "standard"
+
+
+class BatchKinshipResponse(Schema):
+    """批量称呼计算响应"""
+    results: dict[str, KinshipResponse]  # target_id -> result
+
+
 class KinshipTitleSchema(Schema):
     """称呼字典项"""
     relationship_path: str

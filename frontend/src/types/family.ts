@@ -9,6 +9,7 @@ export interface FamilyMember {
   parentId?: string | null
   spouseId?: string | null
   children?: string[]
+  birth_order?: string // 后端返回的排行信息
 }
 
 export interface Family {

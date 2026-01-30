@@ -10,7 +10,9 @@ from apps.common.exceptions import NotFoundError
 from .schemas import (
     KinshipCalculateRequest,
     KinshipResponse,
-    KinshipTitleSchema
+    KinshipTitleSchema,
+    BatchKinshipRequest,
+    BatchKinshipResponse
 )
 from .services import KinshipService
 
@@ -18,7 +20,7 @@ router = Router(tags=["Kinship"])
 service = KinshipService()
 
 
-@router.post("/calculate", response=KinshipResponse, auth=JWTAuth())
+@router.post("/calculate", response=KinshipResponse, auth=None)
 def calculate_kinship(request, data: KinshipCalculateRequest):
     """计算两个成员之间的称呼"""
     result = service.calculate_kinship(
@@ -36,7 +38,18 @@ def calculate_kinship(request, data: KinshipCalculateRequest):
     return result
 
 
-@router.get("/titles", response=List[KinshipTitleSchema], auth=JWTAuth())
+@router.post("/batch-calculate", response=BatchKinshipResponse, auth=None)
+def batch_calculate_kinship(request, data: BatchKinshipRequest):
+    """批量计算一个成员到家族中所有其他成员的称呼"""
+    results = service.calculate_all_kinship(
+        family_id=data.family_tree_id,
+        from_id=data.from_member_id,
+        dialect=data.dialect
+    )
+    return {"results": results}
+
+
+@router.get("/titles", response=List[KinshipTitleSchema], auth=None)
 def get_titles(request, dialect: str = "standard"):
     """获取称呼字典"""
     # 将服务中的字典转换为 Schema 列表

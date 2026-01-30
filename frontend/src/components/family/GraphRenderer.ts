@@ -6,8 +6,11 @@ import type {
   LayoutResult, 
   FamilyGraphConfig,
   NodeEvent,
-  EdgeEvent
+  EdgeEvent,
+  NodePosition
 } from './FamilyGraphEngine'
+
+import { KinshipCalculator } from '@/utils/kinship'
 
 // 渲染器接口
 export interface GraphRenderer {
@@ -31,6 +34,7 @@ export interface GraphScene {
   layoutResult: LayoutResult
   viewport: Viewport
   config: FamilyGraphConfig
+  memberTitles?: Record<string, string>
 }
 
 // SVG渲染器实现
@@ -42,11 +46,13 @@ export class SVGRenderer implements GraphRenderer {
   private contentGroup!: SVGGElement
   private relationshipGroup!: SVGGElement
   private nodeGroup!: SVGGElement
+  private labelGroup!: SVGGElement
   
   private width = 0
   private height = 0
   private currentLayout: LayoutResult | null = null
   private eventListeners = new Map<string, Function[]>()
+  private kinshipCalculator: KinshipCalculator | null = null
   
   constructor(container: HTMLElement) {
     this.container = container
@@ -91,6 +97,11 @@ export class SVGRenderer implements GraphRenderer {
     this.nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
     this.nodeGroup.setAttribute('class', 'nodes')
     this.contentGroup.appendChild(this.nodeGroup)
+    
+    // 创建标签组（在节点之上，确保不被遮挡）
+    this.labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    this.labelGroup.setAttribute('class', 'labels')
+    this.contentGroup.appendChild(this.labelGroup)
     
     // 添加到容器
     this.container.appendChild(this.svgElement)
@@ -234,11 +245,17 @@ export class SVGRenderer implements GraphRenderer {
     
     // 渲染节点
     this.renderNodes(scene)
+
+    // 渲染称呼标签
+    if (scene.memberTitles) {
+      this.renderTitles(scene.members, scene.memberTitles, this.currentLayout.positions)
+    }
   }
   
   private clearGroups(): void {
-    this.relationshipGroup.innerHTML = ''
-    this.nodeGroup.innerHTML = ''
+    if (this.relationshipGroup) this.relationshipGroup.innerHTML = ''
+    if (this.nodeGroup) this.nodeGroup.innerHTML = ''
+    if (this.labelGroup) this.labelGroup.innerHTML = ''
   }
   
   private renderRelationships(_scene: GraphScene): void {
@@ -249,6 +266,7 @@ export class SVGRenderer implements GraphRenderer {
       pathElement.setAttribute('d', relationship.path || '')
       pathElement.setAttribute('class', `relationship-line ${relationship.type}`)
       pathElement.setAttribute('data-id', relationship.id) // 添加ID用于选择
+      pathElement.style.setProperty('cursor', 'pointer', 'important') // 强制显示鼠标指针
       pathElement.setAttribute('stroke', relationship.style?.stroke || '#3b82f6')
       pathElement.setAttribute('stroke-width', (relationship.style?.strokeWidth || 2).toString())
       pathElement.setAttribute('fill', 'none')
@@ -270,10 +288,13 @@ export class SVGRenderer implements GraphRenderer {
       this.relationshipGroup.appendChild(pathElement)
     })
   }
-  
+
   private renderNodes(scene: GraphScene): void {
     const { members, selectedMembers, config } = scene
     const { positions } = this.currentLayout!
+    
+    // 初始化计算器
+    this.kinshipCalculator = new KinshipCalculator(members)
     
     members.forEach(member => {
       const position = positions.get(member.id)
@@ -283,6 +304,7 @@ export class SVGRenderer implements GraphRenderer {
       nodeGroup.setAttribute('class', `family-node ${member.gender}`)
       nodeGroup.setAttribute('data-member-id', member.id)
       nodeGroup.setAttribute('transform', `translate(${position.x}, ${position.y})`)
+      nodeGroup.style.setProperty('cursor', 'pointer', 'important') // 强制显示鼠标指针
       
       // 节点背景
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
@@ -320,6 +342,41 @@ export class SVGRenderer implements GraphRenderer {
       nameText.textContent = member.name
       
       nodeGroup.appendChild(nameText)
+      
+      // 排行信息 (长子/次女等)
+      // 显示在名字下方，日期上方，或者右上角
+      // 优先使用后端返回的 birth_order
+      let birthOrder = member.birth_order
+      if (!birthOrder) {
+        // 如果没有，尝试前端计算（兼容）
+        birthOrder = this.kinshipCalculator?.getBirthOrder(member.id)
+      }
+
+      if (birthOrder && birthOrder !== '独生子女') {
+        // 创建一个小标签背景
+        const tagGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+        tagGroup.setAttribute('transform', `translate(${position.size.width - 40}, 10)`) // 右上角
+        
+        const tagRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        tagRect.setAttribute('width', '36')
+        tagRect.setAttribute('height', '18')
+        tagRect.setAttribute('rx', '4')
+        tagRect.setAttribute('fill', member.gender === 'male' ? '#dbeafe' : '#fce7f3') // 浅蓝/浅粉背景
+        tagRect.setAttribute('stroke', member.gender === 'male' ? '#3b82f6' : '#ec4899')
+        tagRect.setAttribute('stroke-width', '1')
+        
+        const tagText = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+        tagText.setAttribute('x', '18')
+        tagText.setAttribute('y', '13')
+        tagText.setAttribute('text-anchor', 'middle')
+        tagText.setAttribute('font-size', '10')
+        tagText.setAttribute('fill', member.gender === 'male' ? '#1e40af' : '#9d174d')
+        tagText.textContent = birthOrder
+        
+        tagGroup.appendChild(tagRect)
+        tagGroup.appendChild(tagText)
+        nodeGroup.appendChild(tagGroup)
+      }
       
       // 日期信息
       if (config.showDates && (member.birthDate || member.deathDate)) {
@@ -384,6 +441,62 @@ export class SVGRenderer implements GraphRenderer {
     })
   }
   
+  private renderTitles(members: FamilyMember[], memberTitles: Record<string, string>, positions: Map<string, NodePosition>): void {
+    if (!memberTitles || !this.labelGroup) return
+    
+    members.forEach(member => {
+      const title = memberTitles[member.id]
+      const position = positions.get(member.id)
+      
+      if (!title || !position || !position.visible) return
+      
+      const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+      // 放置在节点上方
+      const x = position.x + position.size.width / 2
+      const y = position.y - 15
+      
+      labelGroup.setAttribute('transform', `translate(${x}, ${y})`)
+      
+      // 标签背景
+      // 先创建文本以获取宽度
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      text.setAttribute('text-anchor', 'middle')
+      text.setAttribute('dominant-baseline', 'middle')
+      text.setAttribute('font-size', '12')
+      text.setAttribute('font-weight', 'bold')
+      text.setAttribute('fill', 'white')
+      text.textContent = title
+      
+      // 估算宽度 (每个字符约 12px + padding)
+      const width = title.length * 12 + 16
+      const height = 24
+      
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+      rect.setAttribute('x', (-width / 2).toString())
+      rect.setAttribute('y', (-height / 2).toString())
+      rect.setAttribute('width', width.toString())
+      rect.setAttribute('height', height.toString())
+      rect.setAttribute('rx', '12')
+      rect.setAttribute('ry', '12')
+      rect.setAttribute('fill', '#ef4444') // 红色醒目背景
+      rect.setAttribute('stroke', 'white')
+      rect.setAttribute('stroke-width', '2')
+      
+      // 小三角指向节点
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      path.setAttribute('d', 'M -6,10 L 0,16 L 6,10 Z')
+      path.setAttribute('fill', '#ef4444')
+      path.setAttribute('stroke', 'white')
+      path.setAttribute('stroke-width', '0') // 不描边三角，或者复杂处理
+      
+      labelGroup.appendChild(rect)
+      labelGroup.appendChild(path)
+      labelGroup.appendChild(text)
+      
+      this.labelGroup.appendChild(labelGroup)
+    })
+  }
+
   private renderAvatar(parent: SVGGElement, member: FamilyMember, nodeSize: Size): void {
     const avatarSize = 32
     const avatarX = (nodeSize.width - avatarSize) / 2

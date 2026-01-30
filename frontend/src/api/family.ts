@@ -19,3 +19,18 @@ export async function listFamilies(params: Record<string, any> = {}) {
     pagination: data?.pagination || { page: 1, page_size: 0, total: 0, total_pages: 1 }
   }
 }
+
+export async function getFamilyDetail(familyId: number) {
+  const res = await client.get(`/family/${familyId}`)
+  return res.data?.data
+}
+
+export async function getFamilyPermissions(familyId: number) {
+  const res = await client.get(`/family/${familyId}/permissions`)
+  return res.data?.data
+}
+
+export async function joinFamily(familyId: number) {
+  const res = await client.post(`/family/${familyId}/join`)
+  return res.data?.data
+}

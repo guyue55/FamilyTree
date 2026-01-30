@@ -81,27 +81,61 @@ export class InteractionManager {
   
   private handlePointerDown(event: PointerEvent): void {
     if (event.pointerType === 'touch') return // 交给 Touch 事件处理
-    if (event.button !== 0) return // 只处理左键
     
-    // 设置指针捕获，防止光标移出区域后事件丢失或光标样式失效
-    this.canvas.setPointerCapture(event.pointerId)
+    // 只处理左键和右键
+    if (event.button !== 0 && event.button !== 2) return
     
-    const target = event.target as HTMLElement
-    const nodeElement = target.closest('.family-node')
-    
-    if (nodeElement && this.currentMode === InteractionMode.DRAG) {
-      // 开始节点拖拽
-      this.startNodeDrag(nodeElement, event)
-    } else if (this.currentMode === InteractionMode.PAN) {
-      // 开始视口拖拽
-      this.startViewportDrag(event)
+    // 如果是右键，不进行拖拽操作，但可能需要触发选中
+    if (event.button === 2) {
+      // 右键不设置捕获，以免阻止 contextmenu 事件
+      return
     }
+    
+    // 记录初始状态，但不立即捕获
+    this.isPointerDown = true
+    this.pointerDownStart = { x: event.clientX, y: event.clientY }
+    this.pointerDownTarget = event.target as HTMLElement
   }
   
   private handlePointerMove(event: PointerEvent): void {
     if (event.pointerType === 'touch') return
     
-    if (this.isNodeDragging && this.draggedNodeId) {
+    if (this.isPointerDown && !this.isDragging && !this.isNodeDragging) {
+      // 检查移动距离是否超过阈值
+      const dx = event.clientX - this.pointerDownStart.x
+      const dy = event.clientY - this.pointerDownStart.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      
+      if (distance > this.dragThreshold) {
+        // 超过阈值，开始拖拽
+        // 设置指针捕获
+        this.canvas.setPointerCapture(event.pointerId)
+        
+        const nodeElement = this.pointerDownTarget?.closest('.family-node')
+        
+        if (nodeElement && this.currentMode === InteractionMode.DRAG) {
+          // 开始节点拖拽 - 使用 pointerDownStart 作为起始点，避免跳变
+          this.startNodeDrag(nodeElement, {
+            ...event,
+            clientX: this.pointerDownStart.x,
+            clientY: this.pointerDownStart.y
+          } as MouseEvent)
+          
+          // 立即更新一次位置到当前点
+          this.updateNodeDrag(event)
+        } else if (this.currentMode === InteractionMode.PAN) {
+          // 开始视口拖拽
+          this.startViewportDrag({
+            ...event,
+            clientX: this.pointerDownStart.x,
+            clientY: this.pointerDownStart.y
+          } as PointerEvent)
+          
+          // 立即更新一次位置到当前点
+          this.updateViewportDrag(event)
+        }
+      }
+    } else if (this.isNodeDragging && this.draggedNodeId) {
       this.updateNodeDrag(event)
     } else if (this.isDragging) {
       this.updateViewportDrag(event)
@@ -111,11 +145,16 @@ export class InteractionManager {
   private handlePointerUp(event: PointerEvent): void {
     if (event.pointerType === 'touch') return
     
+    this.isPointerDown = false
+    this.pointerDownTarget = null
+    
     // 无论是否拖拽，都释放捕获
     try {
-      this.canvas.releasePointerCapture(event.pointerId)
+      if (this.canvas.hasPointerCapture(event.pointerId)) {
+        this.canvas.releasePointerCapture(event.pointerId)
+      }
     } catch (e) {
-      // 忽略释放失败（可能已经释放或未捕获）
+      // 忽略释放失败
     }
 
     if (this.isNodeDragging) {
@@ -298,6 +337,8 @@ export class InteractionManager {
     this.canvas.style.cursor = this.getCursorForMode()
   }
   
+
+
   // 节点拖拽方法
   private startNodeDrag(nodeElement: Element, event: MouseEvent): void {
     const nodeId = nodeElement.getAttribute('data-member-id')
@@ -307,15 +348,23 @@ export class InteractionManager {
     this.draggedNodeId = nodeId
     this.nodeDragStart = { x: event.clientX, y: event.clientY }
     
+    // 设置光标
+    this.canvas.style.cursor = 'grabbing'
+    
+    // 阻止事件冒泡，防止触发视口拖拽
+    event.stopPropagation()
+    
     this.emit('nodeDragStart', {
       nodeId,
       startPosition: { x: event.clientX, y: event.clientY }
     })
   }
-  
+
   private updateNodeDrag(event: MouseEvent): void {
     if (!this.isNodeDragging || !this.draggedNodeId) return
     
+    // 这里可以触发节点位置更新事件
+    // 目前仅作为示例，实际逻辑可能需要 LayoutManager 支持动态更新
     const deltaX = event.clientX - this.nodeDragStart.x
     const deltaY = event.clientY - this.nodeDragStart.y
     
@@ -326,7 +375,7 @@ export class InteractionManager {
       delta: { x: deltaX, y: deltaY }
     })
   }
-  
+
   private endNodeDrag(event: MouseEvent): void {
     if (!this.isNodeDragging || !this.draggedNodeId) return
     
@@ -338,6 +387,7 @@ export class InteractionManager {
     
     this.isNodeDragging = false
     this.draggedNodeId = null
+    this.updateCursor()
   }
   
   // 缩放方法
@@ -461,7 +511,7 @@ export class InteractionManager {
   private emit(event: string, data: any): void {
     const listeners = this.eventListeners.get(event)
     if (listeners) {
-      [...listeners].forEach(listener => listener(data))
+      listeners.forEach(listener => listener(data))
     }
   }
   

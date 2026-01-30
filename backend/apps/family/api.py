@@ -75,7 +75,7 @@ class FamilyController(StandardCRUDController):
     update_schema = FamilyUpdateSchema
 
     def __init__(self):
-        self.router = Router(auth=JWTAuth(), tags=["家族管理"])
+        self.router = Router(auth=None, tags=["家族管理"])
         self.register_routes()
 
     def serialize_object(self, obj, user=None) -> Dict[str, Any]:

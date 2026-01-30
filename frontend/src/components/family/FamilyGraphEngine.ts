@@ -103,6 +103,17 @@ export interface LayoutResult {
   relationships: RelationshipLine[]
 }
 
+// 场景接口 (与 GraphRenderer 中的 GraphScene 保持一致)
+export interface GraphScene {
+  members: FamilyMember[]
+  selectedMembers: Set<string>
+  selectedRelationships: Set<string>
+  layoutResult: LayoutResult
+  viewport: Viewport
+  config: FamilyGraphConfig
+  memberTitles?: Record<string, string> // 额外的称呼信息
+}
+
 // 事件接口
 export interface GraphEvent {
   type: string
@@ -129,6 +140,7 @@ export class FamilyGraphEngine {
   private selectedMembers: Ref<Set<string>>
   private selectedRelationships: Ref<Set<string>>
   private viewport: Ref<Viewport>
+  private memberTitles: Ref<Record<string, string>>
   
   // 核心模块
   private renderer!: GraphRenderer
@@ -157,6 +169,7 @@ export class FamilyGraphEngine {
       height: this.config.height,
       zoom: 1
     })
+    this.memberTitles = ref<Record<string, string>>({})
     
     // 初始化核心模块
     this.initializeModules()
@@ -229,6 +242,11 @@ export class FamilyGraphEngine {
     this.emit('dataLoaded', { members, layoutResult })
   }
   
+  public setMemberTitles(titles: Record<string, string>): void {
+    this.memberTitles.value = titles
+    this.scheduleRender()
+  }
+
   public setLayout(layoutType: FamilyLayoutType): void {
     if (this.config.layout === layoutType) return
     
@@ -277,6 +295,16 @@ export class FamilyGraphEngine {
     // 优化：仅更新选中状态，不触发全量重绘
     this.renderer.updateSelection(this.selectedMembers.value)
   }
+ 
+   public selectMemberExact(memberId: string): void {
+     this.selectedMembers.value.clear()
+     this.selectedMembers.value.add(memberId)
+     this.emit('selectionChanged', { 
+       selectedMembers: Array.from(this.selectedMembers.value),
+       member: this.members.value.find(m => m.id === memberId)
+     })
+     this.renderer.updateSelection(this.selectedMembers.value)
+   }
 
   public selectRelationship(relationshipId: string, multiSelect = false): void {
     if (!multiSelect) {
@@ -387,6 +415,16 @@ export class FamilyGraphEngine {
     this.interactionManager.on('nodeDrag', (data: any) => {
       this.emit('nodeDrag', data)
     })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.interactionManager.on('nodeContextMenu', (data: any) => {
+      this.emit('nodeContextMenu', data)
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.interactionManager.on('canvasContextMenu', (data: any) => {
+      this.emit('canvasContextMenu', data)
+    })
   }
   
   private scheduleRender(): void {
@@ -418,7 +456,8 @@ export class FamilyGraphEngine {
       selectedRelationships,
       layoutResult,
       viewport,
-      config: this.config
+      config: this.config,
+      memberTitles: this.memberTitles?.value || {}
     })
   }
   

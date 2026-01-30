@@ -151,11 +151,11 @@ export const useFamilyStore = defineStore('family', () => {
       const { updateMember: apiUpdateMember } = await import('@/api/members')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await apiUpdateMember(member.id, member as any)
-      
-      const index = familyMembers.value.findIndex(m => m.id === member.id)
-      if (index !== -1 && res) {
-        // 更新本地状态
-        familyMembers.value[index] = { ...member, ...res }
+      if (res) {
+        const familyId = currentFamily.value?.id
+        if (familyId) {
+          await loadMembers(familyId)
+        }
       }
       return res
     } catch (err) {
@@ -189,13 +189,12 @@ export const useFamilyStore = defineStore('family', () => {
       const res = await apiCreateMember(member as any)
       
       if (res) {
-        const newMember: FamilyMember = {
-          ...member,
-          id: String(res.id || Date.now()),
-          ...res
+        const familyId = currentFamily.value?.id
+        if (familyId) {
+          const refreshed = await loadMembers(familyId)
+          return refreshed.find(m => m.id === String(res.id)) || null
         }
-        familyMembers.value.push(newMember)
-        return newMember
+        return null
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Create failed'

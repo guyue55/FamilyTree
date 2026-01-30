@@ -31,7 +31,7 @@ from apps.common.constants import BusinessLimits
 from apps.common.exceptions import LimitExceededError
 from apps.common.pagination import paginate_queryset
 from apps.common.services import BaseService, CacheableService
-from apps.members.models import FamilyMembership
+from apps.members.models import FamilyMembership, Member
 
 User = get_user_model()
 
@@ -543,10 +543,26 @@ class FamilyService(BaseService, CacheableService):
                 f"家族成员数量已达上限({BusinessLimits.MAX_MEMBERS_PER_FAMILY})"
             )
 
+        # 查找或创建关联的Member
+        member = Member.objects.filter(family_id=family.id, user_id=user.id).first()
+        if not member:
+            # 创建新成员
+            member = Member.objects.create(
+                family_id=family.id,
+                user_id=user.id,
+                name=user.username or f"User {user.id}",
+                gender="unknown",
+                generation=1,
+                is_alive=True,
+                sort_order=0,
+                created_by=user
+            )
+
         # 加入家族 - 创建FamilyMembership记录
         FamilyMembership.objects.create(
             family_id=family.id,
             user_id=user.id,
+            member_id=member.id,
             role="member",
             status="active",
             join_method="direct",

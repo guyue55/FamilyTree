@@ -39,6 +39,8 @@ class MemberCreateSchema(MemberBaseSchema):
 
     family_id: int = Field(..., description="家族ID")
     user_id: Optional[int] = Field(None, description="关联用户ID")
+    parent_id: Optional[int] = Field(None, description="父亲ID")
+    spouse_id: Optional[int] = Field(None, description="配偶ID")
 
     @model_validator(mode="after")
     def validate_member_constraints(self):
@@ -78,6 +80,8 @@ class MemberUpdateSchema(Schema):
     sort_order: Optional[int] = Field(None, ge=1, description="排序序号")
     visibility: Optional[str] = Field(None, description="可见性")
     is_admin: Optional[bool] = Field(None, description="是否为管理员")
+    parent_id: Optional[int] = Field(None, description="父亲ID")
+    spouse_id: Optional[int] = Field(None, description="配偶ID")
 
 
 class MemberResponseSchema(Schema):
@@ -106,6 +110,7 @@ class MemberResponseSchema(Schema):
     sort_order: int = Field(..., description="排序序号")
     visibility: str = Field(..., description="可见性")
     is_admin: bool = Field(..., description="是否为管理员")
+    birth_order: str = Field("", description="排行信息（如：长子、次女）")
     joined_at: datetime = Field(..., description="加入时间")
     creator_id: int = Field(..., description="创建者ID")
     created_at: datetime = Field(..., description="创建时间")

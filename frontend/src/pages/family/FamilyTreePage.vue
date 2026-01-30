@@ -312,10 +312,14 @@
             :show-generation="familyStore.showGeneration"
             v-model:zoomLevel="familyStore.zoomLevel"
             @node-click="selectMember"
+            @node-view="handleViewMember"
+            @node-select="handleNodeSelect"
             @node-edit="editMember"
             @add-member="handleAddMember"
+            @delete-member="deleteMember"
             @export="handleExport"
             @update-options="handleUpdateOptions"
+            @view-kinship="handleViewKinship"
           />
         </div>
       </div>
@@ -421,6 +425,29 @@
       </template>
     </el-dialog>
 
+    <el-dialog 
+      v-model="showMemberDetailDialog" 
+      title="成员详情" 
+      width="520px"
+    >
+      <div v-if="memberDetail">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="姓名">{{ memberDetail.name }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ memberDetail.gender === 'male' ? '男' : '女' }}</el-descriptions-item>
+          <el-descriptions-item label="排行">{{ birthOrder }}</el-descriptions-item>
+          <el-descriptions-item label="世代">{{ memberDetail.generation }}</el-descriptions-item>
+          <el-descriptions-item label="出生日期">{{ memberDetail.birthDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="逝世日期">{{ memberDetail.deathDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="父亲">{{ fatherName }}</el-descriptions-item>
+          <el-descriptions-item label="母亲">{{ motherName }}</el-descriptions-item>
+          <el-descriptions-item label="配偶">{{ spouseName }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <template #footer>
+        <el-button @click="showMemberDetailDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 功能对话框 -->
     <ShareDialog 
       v-model="showShareDialog" 
@@ -448,6 +475,7 @@ import EnhancedFamilyGraph from '@/components/family/EnhancedFamilyGraph.vue'
 import ShareDialog from '@/components/family/ShareDialog.vue'
 import SettingsDialog from '@/components/family/SettingsDialog.vue'
 import RelationshipQueryDialog from '@/components/family/RelationshipQueryDialog.vue'
+import { kinshipApi } from '@/api/kinship'
 import {
   Plus,
   Search,
@@ -463,13 +491,18 @@ import {
   Delete,
   Setting,
   Share,
-  Back
+  Back,
+  Switch
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ensureAuthToken } from '@/api/auth'
+import { getFamilyDetail, getFamilyPermissions, joinFamily } from '@/api/family'
 
-const router = useRouter()
+import { KinshipCalculator } from '@/utils/kinship'
+
 const route = useRoute()
+const router = useRouter()
 const familyStore = useFamilyStore()
 
 // 响应式数据
@@ -484,6 +517,15 @@ const graphContainer = ref<HTMLElement>()
 const graphRef = ref()
 const searchQuery = ref('')
 const selectedGeneration = ref<number | 'all'>('all')
+
+// 称呼查看模式
+const kinshipMode = ref(false)
+const centerMemberId = ref('')
+const kinshipDirection = ref<'from' | 'to'>('from') // 'from': 我称呼TA, 'to': TA称呼我
+const centerMemberName = computed(() => {
+  const member = familyStore.familyMembers.find(m => m.id === centerMemberId.value)
+  return member ? member.name : '未知'
+})
 
 // 新成员表单数据
 const newMember = ref({
@@ -553,7 +595,48 @@ const goBack = () => {
 
 const selectMember = (member: FamilyMember) => {
   familyStore.setSelectedMember(member)
+  graphRef.value?.selectMemberExact?.(member.id)
 }
+
+const showMemberDetailDialog = ref(false)
+const memberDetail = ref<FamilyMember | null>(null)
+
+const handleViewMember = (member: FamilyMember) => {
+  memberDetail.value = member
+  showMemberDetailDialog.value = true
+}
+
+const getMemberNameById = (id: string | null | undefined) => {
+  if (!id) return '-'
+  const m = familyStore.familyMembers.find(x => x.id === id)
+  return m ? m.name : '-'
+}
+
+const fatherName = computed(() => {
+  const p = memberDetail.value?.parentId ? familyStore.familyMembers.find(x => x.id === memberDetail.value?.parentId) : null
+  if (p && p.gender === 'male') return p.name
+  const spouse = p?.spouseId ? familyStore.familyMembers.find(x => x.id === p.spouseId) : null
+  return spouse && spouse.gender === 'male' ? spouse.name : '-'
+})
+
+const motherName = computed(() => {
+  const p = memberDetail.value?.parentId ? familyStore.familyMembers.find(x => x.id === memberDetail.value?.parentId) : null
+  if (p && p.gender === 'female') return p.name
+  const spouse = p?.spouseId ? familyStore.familyMembers.find(x => x.id === p.spouseId) : null
+  return spouse && spouse.gender === 'female' ? spouse.name : '-'
+})
+
+const spouseName = computed(() => getMemberNameById(memberDetail.value?.spouseId))
+
+const birthOrder = computed(() => {
+  if (!memberDetail.value) return '-'
+  // 优先使用后端返回的 birth_order
+  if (memberDetail.value.birth_order) return memberDetail.value.birth_order
+  
+  // 如果后端没有返回（兼容旧数据），则尝试前端计算
+  const calculator = new KinshipCalculator(familyStore.familyMembers)
+  return calculator.getBirthOrder(memberDetail.value.id)
+})
 
 const editMember = (member: FamilyMember) => {
   isEditing.value = true
@@ -735,9 +818,11 @@ const handleAddMember = async () => {
     
     showAddMemberDialog.value = false
     resetForm()
-  } catch (error) {
+  } catch (error: any) {
     console.error(isEditing.value ? '更新成员失败:' : '添加成员失败:', error)
-    ElMessage.error(isEditing.value ? '更新成员失败' : '添加成员失败')
+    // 尝试提取后端返回的具体错误信息
+    const errorMsg = error.response?.data?.message || error.message || (isEditing.value ? '更新成员失败' : '添加成员失败')
+    ElMessage.error(errorMsg)
   }
 }
 
@@ -775,10 +860,69 @@ const handleUpdateOptions = (options: { relationships?: boolean, photos?: boolea
   if (options.generation !== undefined && familyStore.showGeneration !== options.generation) familyStore.toggleGenerationDisplay()
 }
 
+const handleNodeSelect = (selectedIds: string[]) => {
+  if (!selectedIds || selectedIds.length === 0) {
+    familyStore.setSelectedMember(null)
+    return
+  }
+  const member = familyStore.familyMembers.find(m => m.id === selectedIds[0])
+  if (member) {
+    familyStore.setSelectedMember(member)
+  }
+}
+
+// 称呼查看相关方法
+const kinshipResults = ref<Record<string, any> | null>(null)
+
+const handleViewKinship = async (member: FamilyMember) => {
+  centerMemberId.value = member.id
+  kinshipMode.value = true
+  kinshipDirection.value = 'from'
+  
+  try {
+    // 使用前端计算库 relationship.js
+    const calculator = new KinshipCalculator(familyStore.familyMembers)
+    // 计算以 member 为中心，对所有其他成员的称呼
+    const results = calculator.calculateAll(member.id)
+    
+    kinshipResults.value = results
+    updateKinshipDisplay()
+    ElMessage.success(`已切换至以 ${member.name} 为中心的称呼视图`)
+  } catch (error) {
+    console.error('Failed to calculate kinship:', error)
+    ElMessage.error('计算称呼失败')
+    exitKinshipMode()
+  }
+}
+
+const updateKinshipDisplay = () => {
+  if (!kinshipResults.value || !graphRef.value) return
+  
+  const titles = kinshipResults.value as Record<string, string>
+  graphRef.value.setMemberTitles(titles)
+  graphRef.value.fitToScreen?.()
+}
+
+const toggleKinshipDirection = (direction: 'from' | 'to') => {
+  if (kinshipDirection.value === direction) return
+  kinshipDirection.value = direction
+  updateKinshipDisplay()
+}
+
+const exitKinshipMode = () => {
+  kinshipMode.value = false
+  centerMemberId.value = ''
+  kinshipResults.value = null
+  if (graphRef.value) {
+    graphRef.value.setMemberTitles({})
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   // 初始化族谱数据
   const familyId = Number(route.params.id)
+  await ensureAuthToken()
   
   // 设置当前家族信息
   familyStore.setCurrentFamily({
@@ -792,339 +936,23 @@ onMounted(async () => {
   })
   const loaded = await familyStore.loadMembers(familyId)
   if (!loaded || loaded.length === 0) {
-    
-    // 加载示例数据
-  const sampleMembers: FamilyMember[] = [
-    // 第一代 - 始祖
-    {
-      id: '1',
-      familyId: familyId,
-      name: '张德高',
-      gender: 'male',
-      birthDate: '1350-01-01',
-      deathDate: '1420-12-31',
-      generation: 1,
-      parentId: null,
-      spouseId: '2',
-      children: ['3', '4', '5']
-    },
-    {
-      id: '2',
-      familyId: familyId,
-      name: '李氏',
-      gender: 'female',
-      birthDate: '1355-01-01',
-      deathDate: '1425-12-31',
-      generation: 1,
-      parentId: null,
-      spouseId: '1',
-      children: ['3', '4', '5']
-    },
-    
-    // 第二代 - 子女
-    {
-      id: '3',
-      familyId: familyId,
-      name: '张文华',
-      gender: 'male',
-      birthDate: '1375-01-01',
-      deathDate: '1448-12-31',
-      generation: 2,
-      parentId: '1',
-      spouseId: '6',
-      children: ['8', '9']
-    },
-    {
-      id: '4',
-      familyId: familyId,
-      name: '张文武',
-      gender: 'male',
-      birthDate: '1378-01-01',
-      deathDate: '1451-12-31',
-      generation: 2,
-      parentId: '1',
-      spouseId: '7',
-      children: ['10', '11', '12']
-    },
-    {
-      id: '5',
-      familyId: familyId,
-      name: '张文秀',
-      gender: 'female',
-      birthDate: '1380-01-01',
-      deathDate: '1455-12-31',
-      generation: 2,
-      parentId: '1',
-      spouseId: null,
-      children: []
-    },
-    
-    // 第二代配偶
-    {
-      id: '6',
-      familyId: familyId,
-      name: '王氏',
-      gender: 'female',
-      birthDate: '1378-01-01',
-      deathDate: '1450-12-31',
-      generation: 2,
-      parentId: null,
-      spouseId: '3',
-      children: ['8', '9']
-    },
-    {
-      id: '7',
-      familyId: familyId,
-      name: '陈氏',
-      gender: 'female',
-      birthDate: '1380-01-01',
-      deathDate: '1453-12-31',
-      generation: 2,
-      parentId: null,
-      spouseId: '4',
-      children: ['10', '11', '12']
-    },
-    
-    // 第三代 - 孙辈
-    {
-      id: '8',
-      familyId: familyId,
-      name: '张志远',
-      gender: 'male',
-      birthDate: '1400-01-01',
-      deathDate: '1475-12-31',
-      generation: 3,
-      parentId: '3',
-      spouseId: '13',
-      children: ['15', '16']
-    },
-    {
-      id: '9',
-      familyId: familyId,
-      name: '张志明',
-      gender: 'male',
-      birthDate: '1403-01-01',
-      deathDate: '1478-12-31',
-      generation: 3,
-      parentId: '3',
-      spouseId: '14',
-      children: ['17']
-    },
-    {
-      id: '10',
-      familyId: familyId,
-      name: '张志强',
-      gender: 'male',
-      birthDate: '1405-01-01',
-      deathDate: '1480-12-31',
-      generation: 3,
-      parentId: '4',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '11',
-      familyId: familyId,
-      name: '张志华',
-      gender: 'male',
-      birthDate: '1408-01-01',
-      deathDate: null,
-      generation: 3,
-      parentId: '4',
-      spouseId: null,
-      children: ['18', '19']
-    },
-    {
-      id: '12',
-      familyId: familyId,
-      name: '张志兰',
-      gender: 'female',
-      birthDate: '1410-01-01',
-      deathDate: '1485-12-31',
-      generation: 3,
-      parentId: '4',
-      spouseId: null,
-      children: []
-    },
-    
-    // 第三代配偶
-    {
-      id: '13',
-      familyId: familyId,
-      name: '刘氏',
-      gender: 'female',
-      birthDate: '1402-01-01',
-      deathDate: '1477-12-31',
-      generation: 3,
-      parentId: null,
-      spouseId: '8',
-      children: ['15', '16']
-    },
-    {
-      id: '14',
-      familyId: familyId,
-      name: '赵氏',
-      gender: 'female',
-      birthDate: '1405-01-01',
-      deathDate: '1480-12-31',
-      generation: 3,
-      parentId: null,
-      spouseId: '9',
-      children: ['17']
-    },
-    
-    // 第四代 - 曾孙辈
-    {
-      id: '15',
-      familyId: familyId,
-      name: '张国栋',
-      gender: 'male',
-      birthDate: '1425-01-01',
-      deathDate: '1500-12-31',
-      generation: 4,
-      parentId: '8',
-      spouseId: '20',
-      children: ['22', '23']
-    },
-    {
-      id: '16',
-      familyId: familyId,
-      name: '张国梁',
-      gender: 'male',
-      birthDate: '1428-01-01',
-      deathDate: '1503-12-31',
-      generation: 4,
-      parentId: '8',
-      spouseId: '21',
-      children: ['24']
-    },
-    {
-      id: '17',
-      familyId: familyId,
-      name: '张国华',
-      gender: 'male',
-      birthDate: '1430-01-01',
-      deathDate: null,
-      generation: 4,
-      parentId: '9',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '18',
-      familyId: familyId,
-      name: '张国强',
-      gender: 'male',
-      birthDate: '1432-01-01',
-      deathDate: null,
-      generation: 4,
-      parentId: '11',
-      spouseId: null,
-      children: ['25', '26']
-    },
-    {
-      id: '19',
-      familyId: familyId,
-      name: '张国秀',
-      gender: 'female',
-      birthDate: '1435-01-01',
-      deathDate: null,
-      generation: 4,
-      parentId: '11',
-      spouseId: null,
-      children: []
-    },
-    
-    // 第四代配偶
-    {
-      id: '20',
-      familyId: familyId,
-      name: '孙氏',
-      gender: 'female',
-      birthDate: '1427-01-01',
-      deathDate: '1502-12-31',
-      generation: 4,
-      parentId: null,
-      spouseId: '15',
-      children: ['22', '23']
-    },
-    {
-      id: '21',
-      familyId: familyId,
-      name: '周氏',
-      gender: 'female',
-      birthDate: '1430-01-01',
-      deathDate: '1505-12-31',
-      generation: 4,
-      parentId: null,
-      spouseId: '16',
-      children: ['24']
-    },
-    
-    // 第五代 - 玄孙辈
-    {
-      id: '22',
-      familyId: familyId,
-      name: '张家兴',
-      gender: 'male',
-      birthDate: '1450-01-01',
-      deathDate: null,
-      generation: 5,
-      parentId: '15',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '23',
-      familyId: familyId,
-      name: '张家旺',
-      gender: 'male',
-      birthDate: '1453-01-01',
-      deathDate: null,
-      generation: 5,
-      parentId: '15',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '24',
-      familyId: familyId,
-      name: '张家富',
-      gender: 'male',
-      birthDate: '1455-01-01',
-      deathDate: null,
-      generation: 5,
-      parentId: '16',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '25',
-      familyId: familyId,
-      name: '张家贵',
-      gender: 'male',
-      birthDate: '1457-01-01',
-      deathDate: null,
-      generation: 5,
-      parentId: '18',
-      spouseId: null,
-      children: []
-    },
-    {
-      id: '26',
-      familyId: familyId,
-      name: '张家慧',
-      gender: 'female',
-      birthDate: '1460-01-01',
-      deathDate: null,
-      generation: 5,
-      parentId: '18',
-      spouseId: null,
-      children: []
+    ElMessage.info('暂无家族成员数据，请添加成员')
+  }
+
+  try {
+    const detail = await getFamilyDetail(familyId)
+    if (!detail) {
+      ElMessage.warning('家族不存在或不可见，部分功能可能不可用')
     }
-  ]
-  
-  familyStore.setFamilyMembers(sampleMembers)
+    const perms = await getFamilyPermissions(familyId)
+    if (perms && !perms.is_member && perms.can_join) {
+      await joinFamily(familyId)
+      ElMessage.success('已加入家族，您可进行增删改查操作')
+    } else if (perms && !perms.is_member && !perms.can_join) {
+      ElMessage.warning('您不是该家族成员，且不允许加入，增删改查功能将不可用')
+    }
+  } catch (e) {
+    // 忽略权限检查异常，避免阻断渲染
   }
 })
 </script>

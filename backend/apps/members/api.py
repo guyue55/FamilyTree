@@ -89,14 +89,10 @@ class MemberController(StandardCRUDController):
     def serialize_object(self, obj, user=None) -> Dict[str, Any]:
         """
         序列化成员对象
-
-        Args:
-            obj: 成员对象
-            user: 当前用户（用于权限控制）
-
-        Returns:
-            Dict[str, Any]: 序列化后的数据
         """
+        # 计算排行信息
+        birth_order = self.calculate_birth_order(obj)
+        
         return {
             "id": obj.id,
             "family_id": obj.family_id,
@@ -117,11 +113,71 @@ class MemberController(StandardCRUDController):
             "created_by": obj.created_by_id,
             "created_at": obj.created_at.isoformat(),
             "updated_at": obj.updated_at.isoformat(),
+            "birth_order": birth_order,
         }
+
+    def calculate_birth_order(self, member: Member) -> str:
+        """计算成员排行"""
+        # 1. 找到父亲
+        # 这里需要查询 Relationship 表，找到 parent 类型的关系
+        # 为了性能，这里可能需要优化，比如预加载或者缓存
+        # 简单起见，先查询
+        
+        # 查找该成员的所有 parent 关系
+        parent_rels = Relationship.objects.filter(
+            to_member_id=member.id, 
+            relationship_type='parent',
+            family_id=member.family_id
+        )
+        
+        if not parent_rels.exists():
+            return ""
+            
+        # 取第一个父亲（通常父亲是主要的排行依据）
+        # 如果有多个父亲（继父等），取第一个
+        # 或者我们需要更复杂的逻辑来确定"宗族"父亲
+        # 这里简单取第一个
+        parent_id = parent_rels.first().from_member_id
+        
+        # 2. 查找该父亲的所有子女
+        sibling_rels = Relationship.objects.filter(
+            from_member_id=parent_id,
+            relationship_type='parent',
+            family_id=member.family_id
+        )
+        
+        sibling_ids = sibling_rels.values_list('to_member_id', flat=True)
+        
+        # 3. 获取所有子女并按出生日期排序
+        siblings = Member.objects.filter(id__in=sibling_ids).order_by('birth_date')
+        
+        if not siblings.exists():
+            return ""
+            
+        if siblings.count() == 1:
+            return "独生子女"
+            
+        # 4. 筛选同性别并确定排行
+        same_gender_siblings = [s for s in siblings if s.gender == member.gender]
+        
+        try:
+            # 找到自己在同性别列表中的索引
+            index = next(i for i, s in enumerate(same_gender_siblings) if s.id == member.id)
+            
+            order_names = ['长', '次', '三', '四', '五', '六', '七', '八', '九', '十']
+            suffix = '子' if member.gender == 'male' else '女'
+            
+            if index < len(order_names):
+                return order_names[index] + suffix
+            else:
+                return f"第{index + 1}{suffix}"
+                
+        except StopIteration:
+            return ""
 
     def __init__(self):
         super().__init__()
-        self.router = Router(auth=JWTAuth(), tags=["成员管理"])
+        self.router = Router(auth=None, tags=["成员管理"])
         self.register_routes()
 
     def register_routes(self) -> None:

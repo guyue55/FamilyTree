@@ -78,34 +78,59 @@ class KinshipService:
         # 3. 解析路径并生成结果
         return self._resolve_path_to_title(path, from_id, to_id)
 
+    def calculate_all_kinship(self, family_id: int, from_id: str, dialect: str = "standard") -> Dict[str, Dict]:
+        """
+        计算一个成员到家族中所有其他成员的称呼
+        """
+        # 1. 构建图
+        graph = self._build_graph(family_id)
+        
+        # 2. 单次BFS计算所有最短路径
+        all_paths = self._find_all_paths(graph, str(from_id))
+        
+        results = {}
+        for target_id, path in all_paths.items():
+            if target_id == str(from_id):
+                continue
+                
+            # 3. 解析路径
+            if path:
+                result = self._resolve_path_to_title(path, from_id, target_id)
+                if result:
+                    results[target_id] = result
+                
+        return results
+
     def _build_graph(self, family_id: int) -> Dict[str, List[Dict]]:
         """
         构建家族关系图
         Returns:
             Dict: {member_id: [{target_id, type, direction}]}
-            direction: 'out' (主动关系), 'in' (被动关系)
         """
         relationships = Relationship.objects.filter(family_id=family_id)
         graph = {}
         
         for rel in relationships:
+            # 统一转为字符串ID，避免类型不匹配
+            from_id = str(rel.from_member_id)
+            to_id = str(rel.to_member_id)
+            
             # 添加正向边
-            if rel.from_member_id not in graph:
-                graph[rel.from_member_id] = []
-            graph[rel.from_member_id].append({
-                "target": rel.to_member_id,
+            if from_id not in graph:
+                graph[from_id] = []
+            graph[from_id].append({
+                "target": to_id,
                 "type": rel.relationship_type,
                 "direction": "out"
             })
             
-            # 添加反向边 (无向图搜索，但保留方向信息用于计算)
-            if rel.to_member_id not in graph:
-                graph[rel.to_member_id] = []
+            # 添加反向边
+            if to_id not in graph:
+                graph[to_id] = []
             
-            # 推断反向关系类型
             reverse_type = self._get_reverse_type(rel.relationship_type)
-            graph[rel.to_member_id].append({
-                "target": rel.from_member_id,
+            graph[to_id].append({
+                "target": from_id,
                 "type": reverse_type,
                 "direction": "in"
             })
@@ -146,6 +171,36 @@ class KinshipService:
                         queue.append((neighbor, new_path))
         
         return None
+
+    def _find_all_paths(self, graph: Dict, start: str) -> Dict[str, List[Dict]]:
+        """
+        BFS 查找从起点到所有可达节点的路径
+        
+        Returns:
+            Dict: {target_id: path_list}
+        """
+        paths = {start: []}
+        queue = deque([start])
+        visited = {start}
+        
+        while queue:
+            current = queue.popleft()
+            current_path = paths[current]
+            
+            if current in graph:
+                for edge in graph[current]:
+                    neighbor = edge["target"]
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        new_path = current_path + [{
+                            "from": current,
+                            "to": neighbor,
+                            "type": edge["type"]
+                        }]
+                        paths[neighbor] = new_path
+                        queue.append(neighbor)
+        
+        return paths
 
     def _resolve_path_to_title(self, path: List[Dict], from_id: str, to_id: str) -> Dict:
         """将路径转换为称呼"""

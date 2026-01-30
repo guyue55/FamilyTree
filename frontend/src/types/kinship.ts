@@ -19,3 +19,13 @@ export interface KinshipCalculateRequest {
   to_member_id: string
   dialect?: string
 }
+
+export interface BatchKinshipRequest {
+  family_tree_id: number
+  from_member_id: string
+  dialect?: string
+}
+
+export interface BatchKinshipResponse {
+  results: Record<string, KinshipResponse>
+}

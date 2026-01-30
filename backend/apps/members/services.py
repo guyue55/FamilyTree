@@ -20,6 +20,7 @@ from apps.common.exceptions import (
 )
 from .models import Member
 from apps.family.models import Family
+from apps.relationships.models import Relationship, RelationshipTypeChoices
 
 User = get_user_model()
 
@@ -104,6 +105,10 @@ class MemberService(BaseService, CacheableService):
     def create_member(self, data: Dict[str, Any], user: User) -> Member:
         """创建成员"""
         try:
+            # 提取关系数据
+            parent_id = data.pop("parent_id", None)
+            spouse_id = data.pop("spouse_id", None)
+
             # 验证数据
             validated_data = self.validate_create_data(data, user)
 
@@ -113,6 +118,39 @@ class MemberService(BaseService, CacheableService):
             # 创建成员
             member = Member.objects.create(**validated_data)
 
+            # 创建关系
+            if parent_id:
+                # 建立双向关系
+                # 1. 孩子 -> 父母 (CHILD)
+                Relationship.objects.create(
+                    family_id=member.family_id,
+                    from_member_id=member.id,
+                    to_member_id=parent_id,
+                    relationship_type=RelationshipTypeChoices.CHILD
+                )
+                # 2. 父母 -> 孩子 (PARENT)
+                Relationship.objects.create(
+                    family_id=member.family_id,
+                    from_member_id=parent_id,
+                    to_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.PARENT
+                )
+
+            if spouse_id:
+                # 建立双向配偶关系
+                Relationship.objects.create(
+                    family_id=member.family_id,
+                    from_member_id=member.id,
+                    to_member_id=spouse_id,
+                    relationship_type=RelationshipTypeChoices.SPOUSE
+                )
+                Relationship.objects.create(
+                    family_id=member.family_id,
+                    from_member_id=spouse_id,
+                    to_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.SPOUSE
+                )
+
             logger.info(f"Member created: {member.name} by {user.username}")
             return member
 
@@ -121,6 +159,101 @@ class MemberService(BaseService, CacheableService):
         except Exception as e:
             logger.error(f"Create member error: {e}")
             raise OperationError("创建成员失败")
+
+    @transaction.atomic
+    def update_member(self, member_id: int, data: Dict[str, Any], user: User) -> Member:
+        """更新成员"""
+        try:
+            member = Member.objects.get(id=member_id)
+            
+            # 提取关系数据
+            # 注意：我们需要区分"不更新此字段"和"更新为None"
+            has_parent_update = "parent_id" in data
+            parent_id = data.pop("parent_id", None)
+            
+            has_spouse_update = "spouse_id" in data
+            spouse_id = data.pop("spouse_id", None)
+            
+            # 验证数据
+            validated_data = self.validate_update_data(member, data, user)
+            
+            # 更新成员
+            for key, value in validated_data.items():
+                setattr(member, key, value)
+            member.save()
+            
+            # 更新关系 - 父亲
+            if has_parent_update:
+                # 删除旧的 CHILD 关系
+                Relationship.objects.filter(
+                    family_id=member.family_id,
+                    from_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.CHILD
+                ).delete()
+                
+                # 删除指向此成员的 PARENT 关系 (即删除"某人是此成员的父母"这一事实的反向描述)
+                Relationship.objects.filter(
+                    family_id=member.family_id,
+                    to_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.PARENT
+                ).delete()
+                
+                if parent_id:
+                    # 创建新关系
+                    Relationship.objects.create(
+                        family_id=member.family_id,
+                        from_member_id=member.id,
+                        to_member_id=parent_id,
+                        relationship_type=RelationshipTypeChoices.CHILD
+                    )
+                    Relationship.objects.create(
+                        family_id=member.family_id,
+                        from_member_id=parent_id,
+                        to_member_id=member.id,
+                        relationship_type=RelationshipTypeChoices.PARENT
+                    )
+
+            # 更新关系 - 配偶
+            if has_spouse_update:
+                # 删除旧配偶关系
+                # member -> old_spouse (SPOUSE)
+                Relationship.objects.filter(
+                    family_id=member.family_id,
+                    from_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.SPOUSE
+                ).delete()
+                
+                # old_spouse -> member (SPOUSE)
+                Relationship.objects.filter(
+                    family_id=member.family_id,
+                    to_member_id=member.id,
+                    relationship_type=RelationshipTypeChoices.SPOUSE
+                ).delete()
+                
+                if spouse_id:
+                    Relationship.objects.create(
+                        family_id=member.family_id,
+                        from_member_id=member.id,
+                        to_member_id=spouse_id,
+                        relationship_type=RelationshipTypeChoices.SPOUSE
+                    )
+                    Relationship.objects.create(
+                        family_id=member.family_id,
+                        from_member_id=spouse_id,
+                        to_member_id=member.id,
+                        relationship_type=RelationshipTypeChoices.SPOUSE
+                    )
+
+            logger.info(f"Member updated: {member.name} by {user.username}")
+            return member
+
+        except (ValidationError, PermissionError, NotFoundError) as e:
+            raise e
+        except Member.DoesNotExist:
+            raise NotFoundError("成员不存在")
+        except Exception as e:
+            logger.error(f"Update member error: {e}")
+            raise OperationError("更新成员失败")
 
     def list_members(
         self,
